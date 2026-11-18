@@ -1,0 +1,57 @@
+{
+	"name": "edens-prompt-hub",
+	"displayName": "Eden's Prompt Hub",
+	"description": "A personal prompt library with temporary copies, template variables, code snippet insertion, Antigravity & Codex integration, and Markdown verification checklists.",
+	"publisher": "eden-eitan",
+	"version": "1.2.0",
+	"license": "MIT",
+	"engines": {
+		"vscode": "^1.85.0"
+	},
+	"main": "./extension.js",
+	"scripts": {
+		"test": "node test.js"
+	},
+	"extensionKind": [
+		"ui"
+	],
+	"categories": [
+		"Other"
+	],
+	"contributes": {
+		"viewsContainers": {
+			"activitybar": [
+				{
+					"id": "edenHub",
+					"title": "Eden's Prompt Hub",
+					"icon": "mark.svg"
+				}
+			]
+		},
+		"views": {
+			"edenHub": [
+				{
+					"id": "edenHub.library",
+					"name": "Prompt Library",
+					"type": "webview"
+				}
+			]
+		},
+		"commands": [
+			{
+				"command": "edenHub.open",
+				"title": "Eden's Prompt Hub: Open Dashboard"
+			}
+		],
+		"configuration": {
+			"title": "Eden's Prompt Hub",
+			"properties": {
+				"edenHub.storagePath": {
+					"type": "string",
+					"default": "",
+					"description": "Custom directory for storing prompts and checklists. Leave empty to use the shared folder (~/.edens-prompt-hub) so prompts stay synced across VS Code and Antigravity IDE."
+				}
+			}
+		}
+	}
+}

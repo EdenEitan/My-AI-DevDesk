@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src WEB_SOURCE; script-src 'nonce-NONCE_VALUE'">
+  <link rel="stylesheet" href="STYLE_URI">
+  <title>Eden's Prompt Hub</title>
+</head>
+<body class="VIEW_MODE">
+  <header>
+    <b class="logo" aria-hidden="true">≋</b>
+    <strong>Eden’s Prompt Hub</strong>
+    <button id="expand" type="button">Open dashboard ↗</button>
+  </header>
+  <div id="alerts" role="alert"></div>
+  <div class="shell">
+    <nav aria-label="Prompt categories">
+      <h2>Categories</h2>
+      <div id="categories"></div>
+    </nav>
+    <main>
+      <section id="browse">
+        <div class="heading">
+          <h1 id="name"></h1>
+          <button class="primary" id="new" type="button">＋ New prompt</button>
+        </div>
+        <input id="search" type="search" dir="auto" aria-label="Search all prompts" placeholder="Search all prompts…">
+        <div id="cards"></div>
+      </section>
+
+      <section id="reader" hidden>
+        <button id="back" type="button">← Back to library</button>
+        <h1 id="readTitle" tabindex="-1" dir="auto"></h1>
+        <p id="readDescription" dir="auto"></p>
+        <div id="readContent" dir="auto"></div>
+        <footer class="readerActions">
+          <button class="primary" id="readAntigravity" type="button">Copy &amp; Open Antigravity</button>
+          <button id="readCopy" type="button">Copy prompt</button>
+          <button id="readCustomize" type="button" class="use">Customize</button>
+          <button id="readEdit" type="button">Edit</button>
+          <button id="readVerify" type="button" hidden>Verify AI Output ↗</button>
+        </footer>
+      </section>
+
+      <form id="editor" hidden>
+        <h1 id="formTitle"></h1>
+        <label>Title<input required id="title" dir="auto"></label>
+        <label>Category<select id="category"></select></label>
+        <label>Short description <small>Optional</small><input id="description" dir="auto"></label>
+        <label>Prompt content <small>Supports {{variable}} placeholders</small><textarea required rows="9" id="content" dir="auto"></textarea></label>
+        <label id="itemsLabel">Verification checklist <small>Optional · one task per line</small><textarea rows="3" id="items" dir="auto"></textarea></label>
+        <label id="removeLabel"><input type="checkbox" id="remove"> Remove attached checklist on save</label>
+        <footer>
+          <button class="primary" id="save" type="submit">Save template</button>
+          <button type="button" id="cancel">Cancel</button>
+        </footer>
+      </form>
+
+      <section id="custom" hidden>
+        <div class="mode">Temporary copy</div>
+        <h1 id="customTitle" dir="auto"></h1>
+        <div id="varsPanel" class="vars" hidden>
+          <div class="varsHeading">Template variables</div>
+          <div id="varsGrid" class="varsGrid"></div>
+        </div>
+        <div class="draftHeader">
+          <label for="draft">Prompt for this task</label>
+          <button id="insertSelection" type="button">＋ Insert selected code</button>
+        </div>
+        <textarea rows="14" id="draft" dir="auto"></textarea>
+        <footer class="customActions">
+          <button class="primary" id="openAntigravity" type="button">Copy &amp; Open Antigravity</button>
+          <button id="copyDraft" type="button">Copy customized prompt</button>
+          <button id="openCodex" type="button">Copy &amp; Open Codex</button>
+          <button id="discard" type="button">Discard copy</button>
+        </footer>
+        <div class="ai">
+          <label>Project for AI adaptation<select id="project"></select></label>
+          <button id="adapt" type="button">Adapt to project</button>
+          <button id="stopAdapt" type="button" hidden>Cancel request</button>
+          <div id="aiStatus" role="status"></div>
+          <div id="proposal" hidden>
+            <label>AI suggestion<textarea rows="10" id="suggestion" dir="auto"></textarea></label>
+            <button id="useSuggestion" type="button">Use suggestion in draft</button>
+          </div>
+        </div>
+      </section>
+
+      <div id="status" role="status"></div>
+    </main>
+  </div>
+  <script nonce="NONCE_VALUE" src="SCRIPT_URI"></script>
+</body>
+</html>
