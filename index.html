@@ -78,6 +78,8 @@
         <div class="ai">
           <label>Project for AI adaptation<select id="project"></select></label>
           <button id="adapt" type="button">Adapt to project</button>
+          <label>File for AI adaptation<span class="fileRow"><input id="targetFile" type="text" readonly placeholder="Open or choose a file…"><button id="pickFile" type="button">Browse…</button></span></label>
+          <button id="adaptFile" type="button">Adapt to file</button>
           <button id="stopAdapt" type="button" hidden>Cancel request</button>
           <div id="aiStatus" role="status"></div>
           <div id="proposal" hidden>

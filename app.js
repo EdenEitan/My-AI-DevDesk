@@ -8,6 +8,7 @@ const symbols = ['⌘', '✓', '✦', '◇', '☀'];
 
 let request = 0;
 let adapting = false;
+let fileManuallyPicked = false;
 let rows = [];
 let categories = [];
 let selected = ALL;
@@ -212,12 +213,17 @@ function edit(p) {
   el('title').focus();
 }
 
+function syncAdaptButtons() {
+  el('adapt').disabled = adapting || !el('project').value;
+  el('adaptFile').disabled = adapting || !el('targetFile').value;
+}
+
 function resetAI() {
   if (adapting) send('stopAdapt');
   request++;
   adapting = false;
   el('stopAdapt').hidden = true;
-  el('adapt').disabled = !el('project').value;
+  syncAdaptButtons();
   el('proposal').hidden = true;
   el('suggestion').value = '';
   el('aiStatus').textContent = '';
@@ -265,15 +271,21 @@ el('editor').onsubmit = e => {
   send('save', {...fields, id: editing?.id, revision: editing?.revision, removeChecklist: el('remove').checked});
 };
 
-el('adapt').onclick = () => {
-  if (adapting || !el('project').value) return;
+function startAdapt({file = '', statusMessage}) {
+  if (adapting) return;
+  if (!file && !el('project').value) return;
+  if (file && !el('targetFile').value) return;
   adapting = true;
-  el('adapt').disabled = true;
+  syncAdaptButtons();
   el('stopAdapt').hidden = false;
   el('proposal').hidden = true;
-  el('aiStatus').textContent = 'Reading project context and drafting a suggestion…';
-  send('adapt', {request: ++request, folder: el('project').value, text: el('draft').value});
-};
+  el('aiStatus').textContent = statusMessage;
+  send('adapt', {request: ++request, folder: el('project').value, file, text: el('draft').value});
+}
+
+el('adapt').onclick = () => startAdapt({statusMessage: 'Reading project context and drafting a suggestion…'});
+el('adaptFile').onclick = () => startAdapt({file: el('targetFile').value, statusMessage: 'Reading file context and drafting a suggestion…'});
+el('pickFile').onclick = () => send('pickFile', {currentFile: el('targetFile').value, folder: el('project').value});
 el('project').onchange = resetAI;
 el('stopAdapt').onclick = resetAI;
 el('useSuggestion').onclick = () => {
@@ -289,19 +301,29 @@ window.addEventListener('message', ({data: m}) => {
     const prev = el('project').value;
     el('project').replaceChildren(...(folders.length ? folders : ['']).map(f => new Option(f || 'Open a local project to use AI', f)));
     if (folders.includes(prev)) el('project').value = prev;
-    el('adapt').disabled = adapting || !folders.length;
+    if (!fileManuallyPicked && m.activeFile) el('targetFile').value = m.activeFile;
+    syncAdaptButtons();
     rows = m.rows;
     categories = m.categories;
     if (selected !== ALL && !categories.includes(selected)) selected = ALL;
     el('alerts').textContent = m.warnings.join(' ');
     render();
+  } else if (m.type === 'activeFile') {
+    if (!fileManuallyPicked && m.file) {
+      el('targetFile').value = m.file;
+      syncAdaptButtons();
+    }
+  } else if (m.type === 'filePicked') {
+    fileManuallyPicked = true;
+    el('targetFile').value = m.file || '';
+    resetAI();
   } else if (m.type === 'selectionInserted') {
     insertIntoDraft(m.snippet);
     el('status').textContent = 'Selected code inserted.';
   } else if ((m.type === 'adapted' || m.type === 'adaptFailed') && m.request === request) {
     adapting = false;
     el('stopAdapt').hidden = true;
-    el('adapt').disabled = !el('project').value;
+    syncAdaptButtons();
     el('aiStatus').textContent = m.message || '';
     if (m.type === 'adapted') {
       el('suggestion').value = m.text;
