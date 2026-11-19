@@ -4,6 +4,16 @@ A zero-dependency **Antigravity IDE** & **VS Code** extension for managing a per
 
 ---
 
+## Screenshots
+
+### Prompt Library Dashboard
+![Eden's Prompt Hub — Prompt Library Dashboard](docs/screenshots/dashboard.jpg)
+
+### Customize View — Template Variables, Code Insertion & AI Integration
+![Eden's Prompt Hub — Customize View with Template Variables](docs/screenshots/customize.jpg)
+
+---
+
 ## Features
 
 - **Unified Prompt Library (Sidebar & Full Dashboard)**
