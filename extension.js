@@ -4,7 +4,7 @@ const path = require('node:path');
 const os = require('node:os');
 const {randomBytes} = require('node:crypto');
 const {adapt, executable} = require('./adapt');
-const {Store, categories} = require('./store');
+const {Store, NoteStore, OutputStore, categories} = require('./store');
 
 function resolveStorageDir() {
   const configured = (vscode.workspace.getConfiguration('edenHub').get('storagePath') || '').trim();
@@ -13,6 +13,11 @@ function resolveStorageDir() {
     return path.resolve(expanded);
   }
   return path.join(os.homedir(), '.edens-prompt-hub');
+}
+
+function getFontScale() {
+  const val = vscode.workspace.getConfiguration('edenHub').get('fontScale', 'md');
+  return ['sm', 'md', 'lg'].includes(val) ? val : 'md';
 }
 
 function legacyStorageDirs(context) {
@@ -65,22 +70,68 @@ function formatSnippet(sel) {
 }
 
 function activate(context) {
-  let store = new Store(resolveStorageDir());
+  let rootDir = resolveStorageDir();
+  let store = new Store(rootDir);
+  let noteStore = new NoteStore(rootDir);
+  let outputStore = new OutputStore(rootDir);
   store.migrateFromIfEmpty(legacyStorageDirs(context));
 
   const views = new Set();
   let panel;
   let lastSelection = captureSelection(vscode.window.activeTextEditor);
+  let outputWatcher;
+  let watchTimer;
 
-  function refresh() {
+  function broadcast(payload) {
+    for (const web of views) web.postMessage(payload);
+  }
+
+  function refreshLibrary() {
     const data = store.list();
     const folders = (vscode.workspace.workspaceFolders || [])
       .filter(f => f.uri.scheme === 'file')
       .map(f => f.uri.fsPath);
-    for (const web of views) {
-      web.postMessage({type: 'library', categories, folders, storagePath: store.root, ...data});
+    broadcast({
+      type: 'library',
+      categories,
+      folders,
+      storagePath: store.root,
+      outputsPath: outputStore.root,
+      fontScale: getFontScale(),
+      ...data
+    });
+  }
+
+  function refreshNotes() {
+    broadcast({type: 'notes', ...noteStore.list()});
+  }
+
+  function refreshOutputs() {
+    broadcast({type: 'outputs', ...outputStore.list()});
+  }
+
+  function refreshAll() {
+    refreshLibrary();
+    refreshNotes();
+    refreshOutputs();
+  }
+
+  function startOutputWatcher() {
+    if (outputWatcher) {
+      try { outputWatcher.close(); } catch { /* ignore */ }
+      outputWatcher = undefined;
+    }
+    try {
+      outputWatcher = fs.watch(outputStore.root, {recursive: true}, () => {
+        clearTimeout(watchTimer);
+        watchTimer = setTimeout(refreshOutputs, 250);
+      });
+      outputWatcher.on('error', () => { /* ignore transient fs.watch errors */ });
+    } catch {
+      // Fallback: outputs still refresh on window focus and manual Refresh button.
     }
   }
+  startOutputWatcher();
 
   async function verify(id) {
     const p = store.read(id);
@@ -103,6 +154,22 @@ function activate(context) {
     throw Error('Prompt copied. Enable Antigravity to open its chat panel.');
   }
 
+  function ensureDashboard() {
+    if (panel) {
+      panel.reveal();
+      return panel;
+    }
+    panel = vscode.window.createWebviewPanel(
+      'edenHub.dashboard',
+      'My AI DevDesk',
+      vscode.ViewColumn.Active,
+      {enableScripts: true, retainContextWhenHidden: true}
+    );
+    panel.onDidDispose(() => { panel = undefined; });
+    attach(panel, false);
+    return panel;
+  }
+
   function attach(owner, sidebar) {
     const web = owner.webview;
     const root = context.extensionUri;
@@ -117,22 +184,36 @@ function activate(context) {
       try {
         switch (m.type) {
           case 'ready':
-            refresh();
-            break;
+            refreshAll();
+            return;
           case 'expand':
-            await vscode.commands.executeCommand('edenHub.open');
-            break;
+            ensureDashboard();
+            return;
+          case 'popOut':
+            ensureDashboard();
+            try {
+              await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
+            } catch {
+              throw Error('Could not move dashboard to a new window automatically. Drag the tab out to pop it into a separate window.');
+            }
+            return;
+          case 'setFontScale':
+            if (['sm', 'md', 'lg'].includes(m.scale)) {
+              await vscode.workspace.getConfiguration('edenHub').update('fontScale', m.scale, vscode.ConfigurationTarget.Global);
+              broadcast({type: 'fontScale', scale: m.scale});
+            }
+            return;
           case 'verify':
             await verify(m.id);
             break;
           case 'copy':
-            await vscode.env.clipboard.writeText(m.text);
+            await vscode.env.clipboard.writeText(m.text || '');
             break;
           case 'openAntigravity':
-            await openAntigravityChat(m.text);
+            await openAntigravityChat(m.text || '');
             break;
           case 'openCodex':
-            await vscode.env.clipboard.writeText(m.text);
+            await vscode.env.clipboard.writeText(m.text || '');
             if (!vscode.extensions.getExtension('openai.chatgpt')) {
               throw Error('Prompt copied. Enable the Codex extension in this profile to open its chat.');
             }
@@ -141,7 +222,7 @@ function activate(context) {
           case 'insertSelection': {
             const sel = captureSelection(vscode.window.activeTextEditor) || lastSelection;
             if (!sel) throw Error('Select code in an editor first, then click Insert selected code.');
-            web.postMessage({type: 'selectionInserted', snippet: formatSnippet(sel)});
+            web.postMessage({type: 'selectionInserted', target: m.target || 'draft', snippet: formatSnippet(sel)});
             return;
           }
           case 'stopAdapt':
@@ -178,7 +259,7 @@ function activate(context) {
               'Delete "' + store.read(m.id).title + '" and its checklist?',
               {modal: true},
               'Delete'
-            ) !== 'Delete') break;
+            ) !== 'Delete') return;
             if (m.id && (m.removeChecklist || m.type === 'delete')) {
               const key = store.read(m.id).checklist;
               if (key && vscode.workspace.textDocuments.some(d => d.isDirty && d.uri.fsPath === store.file(key, '.md'))) {
@@ -186,8 +267,75 @@ function activate(context) {
               }
             }
             if (m.type === 'save') store.save(m); else store.remove(m.id, m.revision);
-            refresh();
+            refreshLibrary();
             break;
+          }
+          case 'togglePin': {
+            const updated = store.togglePin(m.id);
+            refreshLibrary();
+            web.postMessage({type: 'pinToggled', id: updated.id, pinned: updated.pinned});
+            return;
+          }
+          case 'saveNote': {
+            const saved = noteStore.save({id: m.id, title: m.title, content: m.content});
+            web.postMessage({type: 'noteSaved', note: saved});
+            refreshNotes();
+            return;
+          }
+          case 'deleteNote': {
+            const existing = noteStore.read(m.id);
+            if (await vscode.window.showWarningMessage(
+              'Delete note "' + existing.title + '"?',
+              {modal: true},
+              'Delete'
+            ) !== 'Delete') return;
+            noteStore.remove(m.id);
+            web.postMessage({type: 'noteDeleted', id: m.id});
+            refreshNotes();
+            return;
+          }
+          case 'refreshOutputs':
+            refreshOutputs();
+            return;
+          case 'readOutput': {
+            const doc = outputStore.read(m.relPath);
+            web.postMessage({type: 'outputContent', target: m.target || 'main', ...doc});
+            return;
+          }
+          case 'saveOutput': {
+            const saved = outputStore.save(m.relPath, m.content);
+            const doc = outputStore.read(saved.relPath);
+            refreshOutputs();
+            web.postMessage({type: 'outputSaved', ...doc});
+            return;
+          }
+          case 'pasteOutputFromClipboard': {
+            const clip = await vscode.env.clipboard.readText();
+            web.postMessage({type: 'clipboardForOutput', content: clip || ''});
+            return;
+          }
+          case 'toggleOutputCheckbox': {
+            const updated = outputStore.toggleCheckbox(m.relPath, m.lineIndex);
+            web.postMessage({type: 'outputContent', target: m.target || 'main', ...updated});
+            return;
+          }
+          case 'openOutputInEditor': {
+            const {fullPath} = outputStore.safePath(m.relPath);
+            const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(fullPath));
+            await vscode.window.showTextDocument(doc, {preview: false});
+            return;
+          }
+          case 'deleteOutput': {
+            const {relPath} = outputStore.safePath(m.relPath);
+            if (await vscode.window.showWarningMessage(
+              'Delete output document "' + relPath + '"?',
+              {modal: true},
+              'Delete'
+            ) !== 'Delete') return;
+            outputStore.remove(relPath);
+            web.postMessage({type: 'outputDeleted', relPath});
+            refreshOutputs();
+            return;
           }
           default:
             return;
@@ -207,22 +355,13 @@ function activate(context) {
   }
 
   context.subscriptions.push(
+    {dispose: () => { clearTimeout(watchTimer); if (outputWatcher) outputWatcher.close(); }},
     vscode.window.registerWebviewViewProvider(
       'edenHub.library',
       {resolveWebviewView: view => attach(view, true)},
       {webviewOptions: {retainContextWhenHidden: true}}
     ),
-    vscode.commands.registerCommand('edenHub.open', () => {
-      if (panel) return panel.reveal();
-      panel = vscode.window.createWebviewPanel(
-        'edenHub.dashboard',
-        "Eden's Prompt Hub",
-        vscode.ViewColumn.Active,
-        {enableScripts: true, retainContextWhenHidden: true}
-      );
-      panel.onDidDispose(() => { panel = undefined; });
-      attach(panel, false);
-    }),
+    vscode.commands.registerCommand('edenHub.open', () => { ensureDashboard(); }),
     vscode.window.onDidChangeTextEditorSelection(e => {
       const sel = captureSelection(e.textEditor);
       if (sel) lastSelection = sel;
@@ -231,18 +370,24 @@ function activate(context) {
       const sel = captureSelection(editor);
       if (sel) lastSelection = sel;
     }),
-    vscode.workspace.onDidChangeWorkspaceFolders(refresh),
+    vscode.workspace.onDidChangeWorkspaceFolders(refreshLibrary),
     vscode.workspace.onDidChangeConfiguration(e => {
       if (e.affectsConfiguration('edenHub.storagePath')) {
-        store = new Store(resolveStorageDir());
+        rootDir = resolveStorageDir();
+        store = new Store(rootDir);
+        noteStore = new NoteStore(rootDir);
+        outputStore = new OutputStore(rootDir);
         store.migrateFromIfEmpty(legacyStorageDirs(context));
-        refresh();
+        startOutputWatcher();
+        refreshAll();
+      } else if (e.affectsConfiguration('edenHub.fontScale')) {
+        broadcast({type: 'fontScale', scale: getFontScale()});
       }
     }),
-    vscode.window.onDidChangeWindowState(s => { if (s.focused) refresh(); })
+    vscode.window.onDidChangeWindowState(s => { if (s.focused) refreshAll(); })
   );
 
-  return {store, verify};
+  return {store, noteStore, outputStore, verify};
 }
 
 module.exports = {activate, formatSnippet};

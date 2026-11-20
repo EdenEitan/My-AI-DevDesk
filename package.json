@@ -1,9 +1,9 @@
 {
 	"name": "edens-prompt-hub",
-	"displayName": "Eden's Prompt Hub",
-	"description": "A personal prompt library with temporary copies, template variables, code snippet insertion, Antigravity & Codex integration, and Markdown verification checklists.",
+	"displayName": "My AI DevDesk",
+	"description": "A zero-dependency AI companion workspace for Antigravity IDE & VS Code: parameterized prompts, pinned favorites, side-by-side Split Panel for RTL/LTR Quick Notes and rendered Markdown Outputs, code insertion, and verification checklists.",
 	"publisher": "eden-eitan",
-	"version": "1.2.0",
+	"version": "1.3.0",
 	"license": "MIT",
 	"engines": {
 		"vscode": "^1.85.0"
@@ -23,7 +23,7 @@
 			"activitybar": [
 				{
 					"id": "edenHub",
-					"title": "Eden's Prompt Hub",
+					"title": "My AI DevDesk",
 					"icon": "mark.svg"
 				}
 			]
@@ -32,7 +32,7 @@
 			"edenHub": [
 				{
 					"id": "edenHub.library",
-					"name": "Prompt Library",
+					"name": "My AI DevDesk",
 					"type": "webview"
 				}
 			]
@@ -40,16 +40,26 @@
 		"commands": [
 			{
 				"command": "edenHub.open",
-				"title": "Eden's Prompt Hub: Open Dashboard"
+				"title": "My AI DevDesk: Open Dashboard"
 			}
 		],
 		"configuration": {
-			"title": "Eden's Prompt Hub",
+			"title": "My AI DevDesk",
 			"properties": {
 				"edenHub.storagePath": {
 					"type": "string",
 					"default": "",
-					"description": "Custom directory for storing prompts and checklists. Leave empty to use the shared folder (~/.edens-prompt-hub) so prompts stay synced across VS Code and Antigravity IDE."
+					"description": "Custom directory for storing prompts, notes, checklists, and outputs. Leave empty to use the shared folder (~/.edens-prompt-hub) so data stays synced across VS Code and Antigravity IDE."
+				},
+				"edenHub.fontScale": {
+					"type": "string",
+					"enum": [
+						"sm",
+						"md",
+						"lg"
+					],
+					"default": "md",
+					"description": "Interface text size preset for My AI DevDesk (sm = 14px, md = 16px, lg = 18px)."
 				}
 			}
 		}

@@ -2,11 +2,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const {Store, categories} = require('./store');
+const {Store, NoteStore, OutputStore, categories} = require('./store');
 
-// 1. Verify store CRUD + checklist + non-destructive migration
 const tmpBase = fs.mkdtempSync(path.join(os.tmpdir(), 'eden-hub-test-'));
 try {
+  // 1. Store: CRUD, checklist, and non-destructive migration
   const legacyDir = path.join(tmpBase, 'legacy');
   const sharedDir = path.join(tmpBase, 'shared');
 
@@ -22,23 +22,52 @@ try {
   assert.ok(created.checklist);
 
   const sharedStore = new Store(sharedDir);
-  const copied = sharedStore.migrateFromIfEmpty([legacyDir]);
-  assert.equal(copied, 2, 'Should copy both JSON prompt and MD checklist');
-
+  assert.equal(sharedStore.migrateFromIfEmpty([legacyDir]), 2);
   const listed = sharedStore.list();
   assert.equal(listed.warnings.length, 0);
   assert.equal(listed.rows.length, 1);
-  assert.equal(listed.rows[0].title, 'API Negative Test');
-
-  // Re-running migration on non-empty store should be a no-op
+  assert.equal(listed.rows[0].pinned, false);
+  const pinnedOnce = sharedStore.togglePin(created.id);
+  assert.equal(pinnedOnce.pinned, true);
+  assert.equal(sharedStore.read(created.id).pinned, true);
+  const unpinned = sharedStore.togglePin(created.id);
+  assert.equal(unpinned.pinned, false);
   assert.equal(sharedStore.migrateFromIfEmpty([legacyDir]), 0);
-
-  // Verify original legacy files are untouched
   assert.equal(legacyStore.list().rows.length, 1);
 
-  // Verify checklist markdown is in English
   const md = fs.readFileSync(sharedStore.file(created.checklist, '.md'), 'utf8');
   assert.ok(md.startsWith('# Verify AI Output\n\n- [ ] Verify 422 status\n- [ ] Verify error message\n'));
+
+  // 2. NoteStore: CRUD, default title, RTL/LTR content preservation
+  const noteStore = new NoteStore(sharedDir);
+  const n1 = noteStore.save({title: '', content: 'Check rating_client.py edge cases'});
+  assert.equal(n1.title, 'Untitled note');
+  const n2 = noteStore.save({title: 'Simulation Notes', content: 'הערה לדוגמה עם `pytest`'});
+  assert.equal(noteStore.list().items.length, 2);
+  const n2Updated = noteStore.save({id: n2.id, title: 'Updated Notes', content: 'Updated body'});
+  assert.equal(n2Updated.id, n2.id);
+  assert.equal(noteStore.read(n2.id).title, 'Updated Notes');
+  noteStore.remove(n1.id);
+  assert.equal(noteStore.list().items.length, 1);
+
+  // 3. OutputStore: nested Markdown files, path traversal protection, checkbox toggling
+  const outputStore = new OutputStore(sharedDir);
+  const savedOut = outputStore.save('quote/03-test-scenarios', '# Test Scenarios\n\n| ID | Case |\n| --- | --- |\n| S01 | Valid |\n\n- [ ] Check 422\n- [x] Check 200\n');
+  assert.equal(savedOut.relPath, 'quote/03-test-scenarios.md');
+  assert.equal(outputStore.list().items.length, 1);
+
+  // Path traversal must be rejected
+  assert.throws(() => outputStore.save('../escape.md', 'nope'), /Invalid document path/);
+  assert.throws(() => outputStore.read('../../outside.md'), /Invalid document path/);
+
+  // Checkbox toggle (- [ ] -> - [x] -> - [ ])
+  const toggled1 = outputStore.toggleCheckbox('quote/03-test-scenarios.md', 6);
+  assert.ok(toggled1.content.includes('- [x] Check 422'));
+  const toggled2 = outputStore.toggleCheckbox('quote/03-test-scenarios.md', 6);
+  assert.ok(toggled2.content.includes('- [ ] Check 422'));
+
+  outputStore.remove('quote/03-test-scenarios.md');
+  assert.equal(outputStore.list().items.length, 0);
 
   console.log('ALL TESTS PASSED');
 } finally {

@@ -5,21 +5,45 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src WEB_SOURCE; script-src 'nonce-NONCE_VALUE'">
   <link rel="stylesheet" href="STYLE_URI">
-  <title>Eden's Prompt Hub</title>
+  <title>My AI DevDesk</title>
 </head>
-<body class="VIEW_MODE">
-  <header>
-    <b class="logo" aria-hidden="true">≋</b>
-    <strong>Eden’s Prompt Hub</strong>
-    <button id="expand" type="button">Open dashboard ↗</button>
+<body class="VIEW_MODE scale-md">
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l1.7 5.3L17 10l-5.3 1.7L10 17l-1.7-5.3L3 10l5.3-1.7L10 3z"/><path d="M18.5 13.5l.85 2.65L22 17l-2.65.85-.85 2.65-.85-2.65L15 17l2.65-.85.85-2.65z"/></svg></span>
+      <strong>My AI DevDesk</strong>
+    </div>
+    <div class="moduleTabs" role="tablist" aria-label="Workspace tools">
+      <button id="tabPrompts" class="tabBtn" type="button" role="tab" aria-selected="true">Prompts <span id="countPrompts" class="pill">0</span></button>
+      <button id="tabNotes" class="tabBtn" type="button" role="tab" aria-selected="false">Notes <span id="countNotes" class="pill">0</span></button>
+      <button id="tabOutputs" class="tabBtn" type="button" role="tab" aria-selected="false">Outputs <span id="countOutputs" class="pill">0</span></button>
+    </div>
+    <div class="headerControls">
+      <button id="toggleSplit" type="button" aria-pressed="false" title="Show Notes or Outputs side-by-side while working on Prompts">◫ Split</button>
+      <div class="scaleGroup" role="group" aria-label="Text size">
+        <button id="scaleSm" type="button" title="Compact text (14px)">A−</button>
+        <button id="scaleMd" type="button" title="Comfortable text (16px)">A</button>
+        <button id="scaleLg" type="button" title="Large text for secondary displays (18px)">A+</button>
+      </div>
+      <button id="popOut" type="button" title="Move dashboard into a separate window">Pop out ↗</button>
+      <button id="expand" type="button">Open dashboard ↗</button>
+    </div>
   </header>
+
   <div id="alerts" role="alert"></div>
-  <div class="shell">
-    <nav aria-label="Prompt categories">
+
+  <!-- MODULE 1: PROMPTS (+ Optional Side-by-Side Split Companion Pane) -->
+  <div id="promptsWorkspace" class="promptsWorkspace">
+  <div id="promptsModule" class="shell">
+    <nav id="promptNav" aria-label="Prompt categories">
       <h2>Categories</h2>
       <div id="categories"></div>
+      <div class="pinnedSection">
+        <h2>Pinned</h2>
+        <div id="pinnedList" class="pinnedList"></div>
+      </div>
     </nav>
-    <main>
+    <main class="mainArea">
       <section id="browse">
         <div class="heading">
           <h1 id="name"></h1>
@@ -30,66 +54,269 @@
       </section>
 
       <section id="reader" hidden>
-        <button id="back" type="button">← Back to library</button>
-        <h1 id="readTitle" tabindex="-1" dir="auto"></h1>
-        <p id="readDescription" dir="auto"></p>
-        <div id="readContent" dir="auto"></div>
-        <footer class="readerActions">
-          <button class="primary" id="readAntigravity" type="button">Copy &amp; Open Antigravity</button>
-          <button id="readCopy" type="button">Copy prompt</button>
-          <button id="readCustomize" type="button" class="use">Customize</button>
-          <button id="readEdit" type="button">Edit</button>
-          <button id="readVerify" type="button" hidden>Verify AI Output ↗</button>
-        </footer>
+        <div class="viewTopBar">
+          <button id="back" type="button">← Back to library</button>
+          <div class="readerActions">
+            <button id="readPin" type="button" class="pinBtn" aria-pressed="false" title="Pin prompt">☆ Pin</button>
+            <button class="primary" id="readAntigravity" type="button">Copy &amp; Open Antigravity</button>
+            <button id="readCopy" type="button">Copy prompt</button>
+            <button id="readCustomize" type="button" class="use">Customize</button>
+            <button id="readEdit" type="button">Edit</button>
+            <button id="readVerify" type="button" hidden>Verify AI Output ↗</button>
+          </div>
+        </div>
+        <div class="readerCard">
+          <h1 id="readTitle" tabindex="-1" dir="auto"></h1>
+          <p id="readDescription" dir="auto"></p>
+          <div id="readContent" dir="auto"></div>
+        </div>
       </section>
 
       <form id="editor" hidden>
-        <h1 id="formTitle"></h1>
-        <label>Title<input required id="title" dir="auto"></label>
-        <label>Category<select id="category"></select></label>
-        <label>Short description <small>Optional</small><input id="description" dir="auto"></label>
-        <label>Prompt content <small>Supports {{variable}} placeholders</small><textarea required rows="9" id="content" dir="auto"></textarea></label>
-        <label id="itemsLabel">Verification checklist <small>Optional · one task per line</small><textarea rows="3" id="items" dir="auto"></textarea></label>
-        <label id="removeLabel"><input type="checkbox" id="remove"> Remove attached checklist on save</label>
-        <footer>
-          <button class="primary" id="save" type="submit">Save template</button>
-          <button type="button" id="cancel">Cancel</button>
-        </footer>
+        <div class="viewTopBar">
+          <button id="editorBack" type="button">← Back to library</button>
+          <h1 id="formTitle" class="compactTitle"></h1>
+        </div>
+        <div class="twoColGrid">
+          <div class="colMain">
+            <label>Title<input required id="title" dir="auto"></label>
+            <label>Prompt content <small>Supports {{variable}} placeholders</small><textarea required rows="16" id="content" dir="auto"></textarea></label>
+            <footer class="formActions">
+              <button class="primary" id="save" type="submit">Save template</button>
+              <button type="button" id="cancel">Cancel</button>
+            </footer>
+          </div>
+          <aside class="colAside">
+            <div class="panelCard">
+              <label class="noTop">Category<select id="category"></select></label>
+              <label>Short description <small>Optional</small><input id="description" dir="auto"></label>
+              <label id="itemsLabel">Verification checklist <small>Optional · one task per line</small><textarea rows="4" id="items" dir="auto"></textarea></label>
+              <label id="removeLabel" class="checkRow"><input type="checkbox" id="remove"> Remove attached checklist on save</label>
+            </div>
+          </aside>
+        </div>
       </form>
 
       <section id="custom" hidden>
-        <div class="mode">Temporary copy</div>
-        <h1 id="customTitle" dir="auto"></h1>
-        <div id="varsPanel" class="vars" hidden>
-          <div class="varsHeading">Template variables</div>
-          <div id="varsGrid" class="varsGrid"></div>
-        </div>
-        <div class="draftHeader">
-          <label for="draft">Prompt for this task</label>
-          <button id="insertSelection" type="button">＋ Insert selected code</button>
-        </div>
-        <textarea rows="14" id="draft" dir="auto"></textarea>
-        <footer class="customActions">
-          <button class="primary" id="openAntigravity" type="button">Copy &amp; Open Antigravity</button>
-          <button id="copyDraft" type="button">Copy customized prompt</button>
-          <button id="openCodex" type="button">Copy &amp; Open Codex</button>
-          <button id="discard" type="button">Discard copy</button>
-        </footer>
-        <div class="ai">
-          <label>Project for AI adaptation<select id="project"></select></label>
-          <button id="adapt" type="button">Adapt to project</button>
-          <button id="stopAdapt" type="button" hidden>Cancel request</button>
-          <div id="aiStatus" role="status"></div>
-          <div id="proposal" hidden>
-            <label>AI suggestion<textarea rows="10" id="suggestion" dir="auto"></textarea></label>
-            <button id="useSuggestion" type="button">Use suggestion in draft</button>
+        <div class="viewTopBar">
+          <div class="titleCluster">
+            <button id="customBack" type="button">← Back</button>
+            <span class="modePill">Temporary copy</span>
+            <h1 id="customTitle" class="compactTitle" dir="auto"></h1>
           </div>
         </div>
-      </section>
+        <div class="twoColGrid">
+          <div class="colMain">
+            <div class="draftHeader">
+              <label for="draft">Prompt for this task</label>
+              <div class="draftTools">
+                <button id="insertSelection" type="button">＋ Insert selected code</button>
+              </div>
+            </div>
+            <textarea rows="17" id="draft" dir="auto"></textarea>
+            <footer class="customActions">
+              <button class="primary" id="openAntigravity" type="button">Copy &amp; Open Antigravity</button>
+              <button id="copyDraft" type="button">Copy customized prompt</button>
+              <button id="openCodex" type="button">Copy &amp; Open Codex</button>
+              <button id="discard" type="button" class="ghostBtn">Discard</button>
+            </footer>
+          </div>
 
-      <div id="status" role="status"></div>
+          <aside class="colAside">
+            <div id="varsPanel" class="panelCard" hidden>
+              <div class="cardHeading">Template variables</div>
+              <div id="varsGrid" class="varsGrid"></div>
+            </div>
+
+            <div id="outputTargetCard" class="panelCard">
+              <div class="cardHeading">Output destination</div>
+              <div class="segmented" role="group" aria-label="Prompt output destination">
+                <button id="destHub" type="button" class="segBtn" aria-pressed="false">Hub Outputs (iPad)</button>
+                <button id="destProject" type="button" class="segBtn" aria-pressed="true">Project docs</button>
+                <button id="destChat" type="button" class="segBtn" aria-pressed="false">Chat only</button>
+              </div>
+              <div id="destHint" class="subtleHint"></div>
+              <button id="appendHubDirective" type="button" class="fullWidthBtn" hidden>＋ Append "Save to Hub Outputs" instruction</button>
+            </div>
+
+            <details id="aiCard" class="panelCard">
+              <summary>AI Project Adaptation (Codex)</summary>
+              <div class="aiBody">
+                <label class="noTop">Project folder<select id="project"></select></label>
+                <div class="inlineRow">
+                  <button id="adapt" type="button">Adapt to project</button>
+                  <button id="stopAdapt" type="button" hidden>Cancel request</button>
+                </div>
+                <div id="aiStatus" role="status"></div>
+                <div id="proposal" hidden>
+                  <label>AI suggestion<textarea rows="8" id="suggestion" dir="auto"></textarea></label>
+                  <button id="useSuggestion" type="button" class="primary">Use suggestion in draft</button>
+                </div>
+              </div>
+            </details>
+          </aside>
+        </div>
+      </section>
     </main>
   </div>
+
+  <!-- DOCKED SIDE-BY-SIDE COMPANION PANE (NOTES / OUTPUTS ALONGSIDE PROMPTS) -->
+  <aside id="splitPane" class="splitPane" hidden aria-label="Side-by-side Notes and Outputs">
+    <div class="splitHeader">
+      <div class="segmented" role="tablist" aria-label="Split panel view">
+        <button id="splitTabNotes" type="button" class="segBtn" role="tab" aria-pressed="true">Notes</button>
+        <button id="splitTabOutputs" type="button" class="segBtn" role="tab" aria-pressed="false">Outputs</button>
+      </div>
+      <button id="closeSplit" type="button" class="miniBtn" title="Close split panel">✕</button>
+    </div>
+
+    <div id="splitNotesBody" class="splitBody">
+      <div class="splitPickerRow">
+        <select id="splitNoteSelect" aria-label="Select a note"></select>
+        <button id="splitNewNote" type="button" class="miniBtn">＋ New</button>
+      </div>
+      <div id="splitNoteEmpty" class="subtleHint" hidden>No notes yet. Click <strong>＋ New</strong> to jot down notes side-by-side.</div>
+      <div id="splitNoteEditor" class="splitNoteEditor" hidden>
+        <div class="splitNoteTitleRow">
+          <input id="splitNoteTitle" type="text" dir="auto" placeholder="Note title…" aria-label="Split note title">
+          <span id="splitNoteSaveState" class="saveBadge saved">Saved ✓</span>
+        </div>
+        <div class="splitActions">
+          <button id="splitInsertNote" type="button" class="miniBtn use" hidden>＋ Insert into prompt</button>
+          <button id="splitCopyNote" type="button" class="miniBtn">Copy</button>
+        </div>
+        <textarea id="splitNoteBody" dir="auto" placeholder="Type notes in Hebrew or English alongside your prompts…"></textarea>
+      </div>
+    </div>
+
+    <div id="splitOutputsBody" class="splitBody" hidden>
+      <div class="splitPickerRow">
+        <select id="splitOutputSelect" aria-label="Select an output document"></select>
+        <button id="splitRefreshOutputs" type="button" class="miniBtn" title="Refresh outputs">↻</button>
+      </div>
+      <div id="splitOutputEmpty" class="subtleHint" hidden>No saved outputs yet. Save a Markdown file in Hub Outputs or use <strong>＋ Paste MD</strong> in the Outputs tab.</div>
+      <div id="splitOutputViewer" class="splitOutputViewer" hidden>
+        <div class="splitActions">
+          <button id="splitInsertOutputPath" type="button" class="miniBtn use" hidden>＋ Insert path</button>
+          <button id="splitInsertOutputContent" type="button" class="miniBtn use" hidden>＋ Insert text</button>
+          <button id="splitCopyOutputPath" type="button" class="miniBtn">Copy path</button>
+          <button id="splitOpenOutputIde" type="button" class="miniBtn">IDE ↗</button>
+        </div>
+        <article id="splitOutputRendered" class="mdView splitMdView" dir="auto"></article>
+      </div>
+    </div>
+  </aside>
+  </div>
+
+  <!-- MODULE A: QUICK NOTES -->
+  <div id="notesModule" class="masterDetail" hidden>
+    <aside class="listPane">
+      <div class="paneHeader">
+        <h2>Quick Notes</h2>
+        <button id="newNote" class="primary" type="button">＋ New</button>
+      </div>
+      <input id="noteSearch" type="search" dir="auto" placeholder="Filter notes…">
+      <div id="noteList" class="itemList"></div>
+    </aside>
+    <section class="detailPane">
+      <div id="noteEmpty" class="emptyPane">
+        <div class="emptyIcon">✎</div>
+        <h3>Personal Scratchpad (RTL &amp; LTR)</h3>
+        <p>Write quick notes in Hebrew or English with automatic direction, auto-saved across VS Code and Antigravity IDE.</p>
+        <button id="emptyNewNote" class="primary" type="button">＋ Create your first note</button>
+      </div>
+      <div id="noteEditorWrap" class="noteWorkspace" hidden>
+        <div class="noteTopBar">
+          <input id="noteTitle" type="text" dir="auto" placeholder="Note title…" aria-label="Note title">
+          <span id="noteSaveState" class="saveBadge">Saved</span>
+        </div>
+        <div class="toolBar">
+          <button id="noteInsertSelection" type="button">＋ Insert selected code</button>
+          <button id="noteCopy" type="button">Copy note</button>
+          <button id="noteOpenAntigravity" class="primary" type="button">Copy &amp; Open Antigravity</button>
+          <button id="noteDelete" type="button" class="dangerBtn">Delete</button>
+        </div>
+        <textarea id="noteBody" dir="auto" placeholder="Start typing notes in English or Hebrew…"></textarea>
+      </div>
+    </section>
+  </div>
+
+  <!-- MODULE E: OUTPUTS / DOCS -->
+  <div id="outputsModule" class="masterDetail" hidden>
+    <aside class="listPane">
+      <div class="paneHeader">
+        <h2>Saved Outputs</h2>
+        <div class="inlineRow">
+          <button id="pasteOutput" class="primary" type="button" title="Paste Markdown from clipboard as a new Hub document">＋ Paste MD</button>
+          <button id="newOutput" type="button" title="Create blank Markdown document">＋ New</button>
+          <button id="refreshOutputs" type="button" title="Refresh outputs folder">↻</button>
+        </div>
+      </div>
+      <input id="outputSearch" type="search" dir="auto" placeholder="Filter outputs…">
+      <div id="outputList" class="itemList"></div>
+      <div class="folderFoot">
+        <small id="outputsFolderLabel"></small>
+        <button id="copyOutputsFolder" type="button" class="miniBtn">Copy folder</button>
+      </div>
+    </aside>
+    <section class="detailPane">
+      <div id="outputEmpty" class="emptyPane">
+        <div class="emptyIcon">▤</div>
+        <h3>Hub Markdown Outputs</h3>
+        <p>Store AI-generated specs, test scenarios, and reports here instead of cluttering your project repository—rendered with tables and interactive checkboxes.</p>
+        <div class="inlineRow centerRow">
+          <button id="emptyPasteOutput" class="primary" type="button">＋ Paste Markdown from Clipboard</button>
+          <button id="emptyNewOutput" type="button">Create blank doc</button>
+        </div>
+      </div>
+
+      <form id="outputCreateForm" class="outputCreate" hidden>
+        <div class="viewTopBar">
+          <h1 class="compactTitle">Save Markdown Output in Hub</h1>
+          <button id="outputCreateCancel" type="button">Cancel</button>
+        </div>
+        <label>Filename <small>Subfolders supported, e.g. quote/03-test-scenarios.md</small>
+          <input id="outputCreateName" required type="text" placeholder="e.g. quote/03-test-scenarios.md">
+        </label>
+        <label>Markdown content
+          <textarea id="outputCreateContent" rows="16" dir="auto" placeholder="Paste or write Markdown…"></textarea>
+        </label>
+        <footer class="formActions">
+          <button type="submit" class="primary">Save document</button>
+          <button id="outputCreateCancel2" type="button">Cancel</button>
+        </footer>
+      </form>
+
+      <div id="outputDetailWrap" class="outputWorkspace" hidden>
+        <div class="outputTopBar">
+          <div class="outputTitleCluster">
+            <h2 id="outputTitle" class="outputHeading"></h2>
+            <span id="outputMeta" class="subtleHint"></span>
+          </div>
+          <div class="toolBar">
+            <div class="segmented" role="group" aria-label="Output view mode">
+              <button id="outputModeView" type="button" class="segBtn" aria-pressed="true">Rendered</button>
+              <button id="outputModeRaw" type="button" class="segBtn" aria-pressed="false">Edit raw</button>
+            </div>
+            <button id="outputCopyPath" type="button">Copy path</button>
+            <button id="outputCopyMd" type="button">Copy MD</button>
+            <button id="outputOpenIde" type="button">Open in IDE ↗</button>
+            <button id="outputDelete" type="button" class="dangerBtn">Delete</button>
+          </div>
+        </div>
+        <article id="outputRendered" class="mdView" dir="auto"></article>
+        <div id="outputRawWrap" class="outputRawWrap" hidden>
+          <textarea id="outputRawEditor" dir="auto"></textarea>
+          <footer class="formActions">
+            <button id="outputSaveRaw" class="primary" type="button">Save changes</button>
+            <button id="outputCancelRaw" type="button">Cancel</button>
+          </footer>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="status" class="toastBar" role="status"></div>
   <script nonce="NONCE_VALUE" src="SCRIPT_URI"></script>
 </body>
 </html>

@@ -1,67 +1,68 @@
-# Eden's Prompt Hub
+# My AI DevDesk ✨
 
-A zero-dependency **Antigravity IDE** & **VS Code** extension for managing a personal, reusable prompt library — featuring temporary customization drafts, live `{{variable}}` templates, one-click selected code insertion, direct **Antigravity** and **Codex** integration, shared cross-IDE storage, and Markdown verification checklists.
+*(formerly Eden's Prompt Hub)*
+
+A zero-dependency **Antigravity IDE** & **VS Code** companion workspace for AI-assisted engineering and testing — combining a parameterized prompt library, pinned quick-launch favorites, RTL/LTR Quick Notes, rendered Markdown AI Outputs, live code snippet insertion, and verification checklists in one fluid interface built for both the IDE sidebar and secondary displays (such as an iPad).
 
 ---
 
 ## Screenshots
 
 ### Prompt Library Dashboard
-![Eden's Prompt Hub — Prompt Library Dashboard](docs/screenshots/dashboard.jpg)
+![My AI DevDesk — Prompt Library Dashboard](docs/screenshots/dashboard.jpg)
 
 ### Customize View — Template Variables, Code Insertion & AI Integration
-![Eden's Prompt Hub — Customize View with Template Variables](docs/screenshots/customize.jpg)
+![My AI DevDesk — Customize View with Template Variables](docs/screenshots/customize.jpg)
 
 ---
 
 ## Features
 
-- **Unified Prompt Library (Sidebar & Full Dashboard)**
-  - Browse all templates at once under **All prompts**, filter across 5 built-in categories (`Software Development`, `Testing & Automation`, `AI & Prompt Engineering`, `Learning & University`, `Personal & Everyday`), or search across titles, descriptions, content, and categories in real time.
-  - Open any prompt in a distraction-free **Reader** view with one-click copy, Antigravity launch, customization, editing, and checklist verification.
-- **Temporary Customization (`Customize`)**
-  - Edit a temporary working copy of any prompt without modifying the saved template.
-  - **Template Variables (`{{variable}}`):** Any `{{placeholder}}` in a template automatically generates fill-in inputs that update the draft live.
-  - **Insert Selected Code (`＋ Insert selected code`):** Pulls the active editor's selected code snippet—formatted as a fenced Markdown block with file path and line numbers—directly into the draft.
-- **Direct AI Tool Integration**
-  - **Copy & Open Antigravity:** Copies the prompt to the clipboard and immediately focuses the Antigravity chat panel (`antigravity.panel.focus`).
-  - **Copy & Open Codex:** Copies the prompt and opens the Codex sidebar (`openai.chatgpt`).
-  - **Project-Aware AI Adaptation (`Adapt to project`):** Runs an ephemeral, read-only Codex CLI session (`--ephemeral --sandbox read-only`) against the currently open local workspace to propose a project-tailored rewrite without modifying files or executing commands.
-- **Markdown Verification Checklists**
-  - Attach verification criteria (one task per line) to any prompt template.
-  - Open **Verify AI Output ↗** to track completion (`- [ ]` → `- [x]`) in a dedicated Markdown editor tab with persistent progress.
-- **Shared Cross-IDE Storage**
-  - Stores prompts and checklists in `~/.edens-prompt-hub` by default so **Antigravity IDE** and **VS Code** stay automatically synchronized.
-  - Automatically performs a non-destructive one-time migration from legacy VS Code global storage when initializing an empty shared directory.
+- **Full-Width Companion UI & Ergonomics (`v1.3.0`)**
+  - Fluid, full-width layout with a **2-column `Customize` & `Editor` workspace** (draft on the left; template variables, output destination, and AI adaptation on the right).
+  - Persistent **Text Size presets (`A−` / `A` / `A+`)** (`edenHub.fontScale`) for comfortable reading on secondary displays, plus 1-click **`Pop out ↗`** to detach the dashboard into its own OS window.
+  - Automatic multi-line `<textarea>` inputs for long-form template variables (e.g., `{{my_prompt}}`, `{{study_material}}`, `{{draft_message}}`).
+- **Side-by-Side Split Companion Panel (`◫ Split`)**
+  - Toggle a sticky right-hand panel alongside **Prompts** (visible across Browse, Reader, Customize, and Editor) to read/edit **Quick Notes** or inspect **rendered Markdown Outputs** (tables & clickable checkboxes) without switching tabs—with 1-click **`＋ Insert into draft`**, **`＋ Insert path`**, and **`＋ Insert text`**.
+- **Prompt Library & Pinned Favorites (`Prompts`)**
+  - Browse all templates under **All prompts**, filter across 5 categories (`Software Development`, `Testing & Automation`, `AI & Prompt Engineering`, `Learning & University`, `Personal & Everyday`), search in real time, and **Pin (`★`)** frequently used prompts directly beneath Categories for 1-click launch into `Customize`.
+  - Edit isolated temporary drafts with live `{{variable}}` substitution, insert selected editor code with file path & line numbers (**`＋ Insert selected code`**), and launch **Antigravity** or **Codex** in one click.
+- **Quick Notes (`Notes`)**
+  - Built-in multi-note scratchpad with native browser `dir="auto"` RTL/LTR support (clean mixed Hebrew + English notes), debounced auto-save (`~/.edens-prompt-hub/notes/`), selected code insertion, and 1-click handoff to Antigravity.
+- **Hub Markdown Outputs (`Outputs`)**
+  - Dedicated workspace (`~/.edens-prompt-hub/outputs/`) for AI-generated specs, test scenario matrices, and execution reports—keeping your project repository (`git status`) clean.
+  - **`Output destination`** selector in `Customize` (`Hub Outputs (iPad)` / `Project docs` / `Chat only`), **`＋ Paste MD`** from clipboard, live `fs.watch` auto-refresh, zero-dependency pure-DOM Markdown renderer (scrollable tables + **interactive clickable `- [ ]` / `- [x]` checkboxes**), raw Markdown editor, **`Copy path`**, and **`Open in IDE ↗`**.
+- **Shared Cross-IDE Storage & Verification Checklists**
+  - Stores prompts, notes, checklists, and outputs in `~/.edens-prompt-hub` by default so **Antigravity IDE** and **VS Code** stay automatically synchronized, with non-destructive migration from legacy VS Code global storage.
 
 ---
 
 ## Architecture & Engineering Highlights
 
 - **Zero External Dependencies:** Built purely on native Node.js (`node:fs`, `node:crypto`, `node:child_process`) and the standard VS Code Extension & Webview APIs (`^1.85.0`)—no bundler or `node_modules` required.
-- **Safe Atomic Persistence (`store.js`):** Each prompt is stored as an individual UUID-indexed JSON file with atomic writes (`.tmp` → rename) and exclusive `.lock` files (`wx`) to guard against concurrent edits and partial writes.
-- **Security-First Webview:** Strict `Content-Security-Policy` (`default-src 'none'`) with a per-view cryptographic `nonce` (`crypto.randomBytes(20)`).
-- **Reliable Editor Selection Tracking:** Captures active editor selections continuously via `onDidChangeTextEditorSelection`, allowing **Insert selected code** to work seamlessly from both the Activity Bar sidebar and the full Dashboard Webview panel.
+- **Safe Atomic Persistence (`store.js`):** Atomic writes (`.tmp` → `rename`), exclusive `.lock` files (`wx`) for prompts, and strict path-traversal guards for nested Markdown outputs.
+- **Security-First Webview:** Strict `Content-Security-Policy` (`default-src 'none'`) with per-view cryptographic `nonce` (`crypto.randomBytes(20)`) and pure-DOM Markdown rendering (zero `innerHTML`).
+- **Reliable Editor Selection Tracking:** Continuously tracks editor selections via `onDidChangeTextEditorSelection` so **Insert selected code** works reliably even when the dashboard is popped out onto a separate display.
 
 ---
 
 ## Installation
 
 ### Option 1: Install from Release `.vsix`
-1. Download `edens-prompt-hub-1.2.0.vsix` from the **Releases** page.
+1. Download `my-ai-devdesk-1.3.0.vsix` from the **Releases** page.
 2. In **Antigravity IDE** or **VS Code**, open **Extensions → `…` → Install from VSIX…** and select the downloaded file—or install via CLI:
    ```bash
    # Antigravity IDE
-   antigravity-ide --install-extension edens-prompt-hub-1.2.0.vsix
+   antigravity-ide --install-extension my-ai-devdesk-1.3.0.vsix
 
    # VS Code
-   code --install-extension edens-prompt-hub-1.2.0.vsix
+   code --install-extension my-ai-devdesk-1.3.0.vsix
    ```
 
 ### Option 2: Run from Source
 1. Clone this repository and open it in **Antigravity IDE** or **VS Code**.
 2. Press `F5` to launch an Extension Development Host window.
-3. Click the layered **Eden's Prompt Hub** icon in the Activity Bar, or run **Eden's Prompt Hub: Open Dashboard** from the Command Palette.
+3. Click the twin-sparkles **My AI DevDesk** icon in the Activity Bar, or run **My AI DevDesk: Open Dashboard** from the Command Palette.
 
 ---
 
@@ -69,34 +70,17 @@ A zero-dependency **Antigravity IDE** & **VS Code** extension for managing a per
 
 | Setting | Type | Default | Description |
 | :--- | :--- | :--- | :--- |
-| `edenHub.storagePath` | `string` | `""` (`~/.edens-prompt-hub`) | Custom directory for storing prompt JSON files and Markdown checklists. Leave empty to use the shared `~/.edens-prompt-hub` folder across IDEs. |
-
----
-
-## Project Structure
-
-```text
-edens-prompt-hub/
-├── package.json     # Extension manifest, views, commands, and configuration
-├── extension.js     # Extension host, shared storage, Antigravity/Codex & selection handlers
-├── store.js         # Atomic JSON & Markdown checklist persistence with lockfile protection
-├── adapt.js         # Ephemeral read-only Codex CLI wrapper for project-context adaptation
-├── index.html       # Webview layout with strict CSP nonce placeholders
-├── app.js           # Client-side state, template variable engine, and UI rendering
-├── style.css        # VS Code theme-aware responsive styling
-├── mark.svg         # Activity Bar icon
-├── test.js          # Unit tests for storage, checklists, and non-destructive migration
-└── LICENSE          # MIT License
-```
+| `edenHub.storagePath` | `string` | `""` (`~/.edens-prompt-hub`) | Custom directory for storing prompts, notes, checklists, and outputs across IDEs. |
+| `edenHub.fontScale` | `"sm" \| "md" \| "lg"` | `"md"` | UI text size preset (`14px`, `16px`, or `18px`), synced with the `A− / A / A+` header controls. |
 
 ---
 
 ## Testing
 
-Run syntax verification and unit tests with Node.js (v18+):
+Run unit tests with Node.js (v18+):
 
 ```bash
-npm test
+node test.js
 ```
 
 ---
