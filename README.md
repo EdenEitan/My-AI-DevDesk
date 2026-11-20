@@ -34,7 +34,7 @@ A zero-dependency **Antigravity IDE** & **VS Code** companion workspace for AI-a
 ## Architecture & Engineering Highlights
 
 - **Zero External Dependencies:** Built purely on native Node.js (`node:fs`, `node:crypto`, `node:child_process`) and the standard VS Code Extension & Webview APIs (`^1.85.0`)—no bundler or `node_modules` required.
-- **Safe Atomic Persistence (`store.js`):** Atomic writes (`.tmp` → `rename`), exclusive `.lock` files (`wx`) for prompts, and strict path-traversal guards for nested Markdown outputs.
+- **Safe Atomic Persistence (`src/storage/`):** Atomic writes (`.tmp` → `rename`), exclusive `.lock` files (`wx`) and optimistic `revision` checks for prompts and notes, and strict path-traversal guards for nested Markdown outputs.
 - **Security-First Webview:** Strict `Content-Security-Policy` (`default-src 'none'`) with per-view cryptographic `nonce` (`crypto.randomBytes(20)`) and pure-DOM Markdown rendering (zero `innerHTML`).
 - **Reliable Editor Selection Tracking:** Continuously tracks editor selections via `onDidChangeTextEditorSelection` so **Insert selected code** works reliably even when the dashboard is popped out onto a separate display.
 

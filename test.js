@@ -41,16 +41,38 @@ async function run() {
     const md = fs.readFileSync(sharedStore.file(created.checklist, '.md'), 'utf8');
     assert.ok(md.startsWith('# Verify AI Output\n\n- [ ] Verify 422 status\n- [ ] Verify error message\n'));
 
-    // 2. NoteStore: CRUD, default title, RTL/LTR content preservation
+    // 2. NoteStore: CRUD, default title, RTL/LTR content, and optimistic concurrency (revision + lock)
     const noteStore = new NoteStore(sharedDir);
     const n1 = noteStore.save({title: '', content: 'Check rating_client.py edge cases'});
     assert.equal(n1.title, 'Untitled note');
+    assert.ok(n1.revision);
     const n2 = noteStore.save({title: 'Simulation Notes', content: 'הערה לדוגמה עם `pytest`'});
     assert.equal(noteStore.list().items.length, 2);
-    const n2Updated = noteStore.save({id: n2.id, title: 'Updated Notes', content: 'Updated body'});
+    const n2Updated = noteStore.save({id: n2.id, revision: n2.revision, title: 'Updated Notes', content: 'Updated body'});
     assert.equal(n2Updated.id, n2.id);
+    assert.notEqual(n2Updated.revision, n2.revision);
     assert.equal(noteStore.read(n2.id).title, 'Updated Notes');
-    noteStore.remove(n1.id);
+
+    // Stale revision from another window must be rejected without overwriting newer edits
+    assert.throws(
+      () => noteStore.save({id: n2.id, revision: n2.revision, title: 'Stale Overwrite', content: 'Lost edit'}),
+      /changed elsewhere/
+    );
+    assert.equal(noteStore.read(n2.id).title, 'Updated Notes');
+    assert.throws(() => noteStore.remove(n2.id, n2.revision), /changed elsewhere/);
+
+    // Legacy note without a revision field on disk still reads and upgrades cleanly
+    const legacyId = '11111111-1111-4111-8111-111111111111';
+    fs.writeFileSync(path.join(noteStore.root, legacyId + '.json'), JSON.stringify({
+      id: legacyId, title: 'Legacy Note', content: 'Old format', updatedAt: 1000
+    }));
+    const legacyRead = noteStore.read(legacyId);
+    assert.equal(legacyRead.revision, null);
+    const legacyUpgraded = noteStore.save({id: legacyId, revision: null, title: 'Legacy Note', content: 'Upgraded'});
+    assert.ok(legacyUpgraded.revision);
+    noteStore.remove(legacyId, legacyUpgraded.revision);
+
+    noteStore.remove(n1.id, n1.revision);
     assert.equal(noteStore.list().items.length, 1);
 
     // 3. OutputStore: nested Markdown files, path traversal protection, checkbox toggling

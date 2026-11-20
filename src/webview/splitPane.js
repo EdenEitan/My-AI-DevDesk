@@ -36,6 +36,7 @@
     state.splitNoteDirty = false;
     send('saveNote', {
       id: state.splitNoteId,
+      revision: state.splitNoteRevision,
       title: el('splitNoteTitle').value,
       content: el('splitNoteBody').value
     });
@@ -54,6 +55,7 @@
     state.splitNoteId = id;
     const note = state.notes.find(n => n.id === id);
     if (!note) {
+      state.splitNoteRevision = null;
       el('splitNoteEmpty').hidden = false;
       el('splitNoteEditor').hidden = true;
       return;
@@ -62,6 +64,7 @@
     el('splitNoteEditor').hidden = false;
     el('splitNoteSelect').value = note.id;
     if (!state.splitNoteDirty) {
+      state.splitNoteRevision = note.revision ?? null;
       el('splitNoteTitle').value = note.title;
       el('splitNoteBody').value = note.content;
       setSplitNoteBadge('saved');

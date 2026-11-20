@@ -16,6 +16,7 @@
     state.noteDirty = false;
     send('saveNote', {
       id: state.activeNoteId,
+      revision: state.activeNoteRevision,
       title: el('noteTitle').value,
       content: el('noteBody').value
     });
@@ -34,11 +35,13 @@
     state.activeNoteId = id;
     const note = state.notes.find(n => n.id === id);
     if (!note) {
+      state.activeNoteRevision = null;
       el('noteEmpty').hidden = false;
       el('noteEditorWrap').hidden = true;
       renderNotesList();
       return;
     }
+    state.activeNoteRevision = note.revision ?? null;
     el('noteEmpty').hidden = true;
     el('noteEditorWrap').hidden = false;
     el('noteTitle').value = note.title;
@@ -85,7 +88,9 @@
     el('noteInsertSelection').onclick = () => send('insertSelection', {target: 'note'});
     el('noteCopy').onclick = () => { send('copy', {text: el('noteBody').value}); flashCopied(el('noteCopy')); };
     el('noteOpenAntigravity').onclick = () => send('openAntigravity', {text: el('noteBody').value});
-    el('noteDelete').onclick = () => { if (state.activeNoteId) send('deleteNote', {id: state.activeNoteId}); };
+    el('noteDelete').onclick = () => {
+      if (state.activeNoteId) send('deleteNote', {id: state.activeNoteId, revision: state.activeNoteRevision});
+    };
   }
 
   Object.assign(app, {

@@ -77,10 +77,19 @@
       state.notes = m.items || [];
       if (state.activeNoteId && !state.notes.some(n => n.id === state.activeNoteId)) {
         state.activeNoteId = state.notes[0]?.id || null;
+        state.activeNoteRevision = null;
       }
       if (!state.activeNoteId && state.notes.length) {
         app.selectNote(state.notes[0].id);
       } else {
+        if (state.activeNoteId && !state.noteDirty) {
+          const latest = state.notes.find(n => n.id === state.activeNoteId);
+          if (latest && latest.revision !== state.activeNoteRevision) {
+            state.activeNoteRevision = latest.revision ?? null;
+            el('noteTitle').value = latest.title;
+            el('noteBody').value = latest.content;
+          }
+        }
         app.renderNotesList();
         if (!state.activeNoteId) {
           el('noteEmpty').hidden = false;
@@ -90,9 +99,12 @@
     },
     noteSaved: m => {
       const saved = m.note;
+      if (state.activeNoteId === saved.id) state.activeNoteRevision = saved.revision ?? null;
+      if (state.splitNoteId === saved.id) state.splitNoteRevision = saved.revision ?? null;
       if (state.activeModule === 'prompts' && state.splitOpen && state.splitTab === 'notes') {
         const isNewSplit = state.splitNoteId !== saved.id;
         state.splitNoteId = saved.id;
+        state.splitNoteRevision = saved.revision ?? null;
         app.setSplitNoteBadge('saved');
         if (isNewSplit) {
           el('splitNoteEmpty').hidden = true;
@@ -105,6 +117,7 @@
       } else {
         const isNew = state.activeNoteId !== saved.id;
         state.activeNoteId = saved.id;
+        state.activeNoteRevision = saved.revision ?? null;
         app.setNoteSaveBadge('saved');
         if (isNew) {
           el('noteEmpty').hidden = true;
@@ -119,10 +132,14 @@
     noteDeleted: m => {
       if (state.activeNoteId === m.id) {
         state.activeNoteId = null;
+        state.activeNoteRevision = null;
         el('noteEmpty').hidden = false;
         el('noteEditorWrap').hidden = true;
       }
-      if (state.splitNoteId === m.id) state.splitNoteId = null;
+      if (state.splitNoteId === m.id) {
+        state.splitNoteId = null;
+        state.splitNoteRevision = null;
+      }
       showStatus('Note deleted.');
     },
     outputs: m => {

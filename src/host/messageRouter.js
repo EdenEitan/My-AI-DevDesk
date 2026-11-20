@@ -128,7 +128,12 @@ function createMessageRouter(ctx, web) {
       web.postMessage({type: 'pinToggled', id: updated.id, pinned: updated.pinned});
     },
     saveNote: m => {
-      const saved = ctx.getNoteStore().save({id: m.id, title: m.title, content: m.content});
+      const saved = ctx.getNoteStore().save({
+        id: m.id,
+        revision: m.revision,
+        title: m.title,
+        content: m.content
+      });
       web.postMessage({type: 'noteSaved', note: saved});
       ctx.refreshNotes();
     },
@@ -140,7 +145,7 @@ function createMessageRouter(ctx, web) {
         {modal: true},
         'Delete'
       ) !== 'Delete') return;
-      noteStore.remove(m.id);
+      noteStore.remove(m.id, m.revision ?? existing.revision);
       web.postMessage({type: 'noteDeleted', id: m.id});
       ctx.refreshNotes();
     },
