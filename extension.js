@@ -69,6 +69,11 @@ function formatSnippet(sel) {
   return `File: \`${sel.fileName}\` (${lineInfo})\n${fence}${sel.languageId}\n${sel.text}\n${fence}`;
 }
 
+function captureFile(editor) {
+  if (!editor || editor.document.uri.scheme !== 'file') return '';
+  return editor.document.uri.fsPath;
+}
+
 function activate(context) {
   let rootDir = resolveStorageDir();
   let store = new Store(rootDir);
@@ -79,6 +84,7 @@ function activate(context) {
   const views = new Set();
   let panel;
   let lastSelection = captureSelection(vscode.window.activeTextEditor);
+  let lastFile = captureFile(vscode.window.activeTextEditor);
   let outputWatcher;
   let watchTimer;
 
@@ -95,6 +101,7 @@ function activate(context) {
       type: 'library',
       categories,
       folders,
+      activeFile: lastFile,
       storagePath: store.root,
       outputsPath: outputStore.root,
       fontScale: getFontScale(),
@@ -225,6 +232,21 @@ function activate(context) {
             web.postMessage({type: 'selectionInserted', target: m.target || 'draft', snippet: formatSnippet(sel)});
             return;
           }
+          case 'pickFile': {
+            const defaultPath = m.currentFile || m.folder || lastFile || '';
+            const defaultUri = defaultPath && fs.existsSync(defaultPath) ? vscode.Uri.file(defaultPath) : undefined;
+            const picked = await vscode.window.showOpenDialog({
+              canSelectFiles: true,
+              canSelectFolders: false,
+              canSelectMany: false,
+              defaultUri
+            });
+            if (picked?.[0]) {
+              lastFile = picked[0].fsPath;
+              web.postMessage({type: 'filePicked', file: lastFile});
+            }
+            return;
+          }
           case 'stopAdapt':
             job?.abort();
             return;
@@ -235,11 +257,14 @@ function activate(context) {
             const timeout = setTimeout(() => current.abort(), 180000);
             try {
               if (!vscode.workspace.isTrusted) throw Error('AI adaptation requires a trusted workspace.');
+              const targetFile = typeof m.file === 'string' ? m.file.trim() : '';
               const folder = vscode.workspace.workspaceFolders?.find(f => f.uri.scheme === 'file' && f.uri.fsPath === m.folder);
-              if (!folder) throw Error('Open a local project folder for AI adaptation.');
+              if (!targetFile && !folder) throw Error('Open a local project folder for AI adaptation.');
+              if (targetFile && !fs.existsSync(targetFile)) throw Error('Select an existing local file for AI adaptation.');
               if (typeof m.text !== 'string' || !m.text.trim()) throw Error('Enter a prompt first.');
+              const workDir = folder ? folder.uri.fsPath : path.dirname(targetFile);
               const binary = executable(vscode.extensions.getExtension('openai.chatgpt')?.extensionPath);
-              const text = await adapt(binary, folder.uri.fsPath, m.text, current.signal);
+              const text = await adapt(binary, workDir, m.text, current.signal, targetFile || undefined);
               if (job === current) web.postMessage({type: 'adapted', request: m.request, text});
             } catch (e) {
               web.postMessage({
@@ -369,6 +394,11 @@ function activate(context) {
     vscode.window.onDidChangeActiveTextEditor(editor => {
       const sel = captureSelection(editor);
       if (sel) lastSelection = sel;
+      const file = captureFile(editor);
+      if (file && file !== lastFile) {
+        lastFile = file;
+        broadcast({type: 'activeFile', file});
+      }
     }),
     vscode.workspace.onDidChangeWorkspaceFolders(refreshLibrary),
     vscode.workspace.onDidChangeConfiguration(e => {

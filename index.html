@@ -140,11 +140,15 @@
             </div>
 
             <details id="aiCard" class="panelCard">
-              <summary>AI Project Adaptation (Codex)</summary>
+              <summary>AI Adaptation (Codex)</summary>
               <div class="aiBody">
                 <label class="noTop">Project folder<select id="project"></select></label>
                 <div class="inlineRow">
                   <button id="adapt" type="button">Adapt to project</button>
+                </div>
+                <label>Target file<span class="fileRow"><input id="targetFile" type="text" readonly placeholder="Open or choose a file…"><button id="pickFile" type="button">Browse…</button></span></label>
+                <div class="inlineRow">
+                  <button id="adaptFile" type="button">Adapt to file</button>
                   <button id="stopAdapt" type="button" hidden>Cancel request</button>
                 </div>
                 <div id="aiStatus" role="status"></div>
