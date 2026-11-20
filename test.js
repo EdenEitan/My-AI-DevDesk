@@ -5,6 +5,7 @@ const path = require('node:path');
 const {Store, NoteStore, OutputStore, categories} = require('./src/storage');
 const {formatSnippet} = require('./src/host/editorContext');
 const {createMessageRouter} = require('./src/host/messageRouter');
+const {PENDING_FILE, consumePendingPopOut} = require('./src/host/pendingPopout');
 const {extractVariables, isMultilineVar, renderTemplate, slugify} = require('./src/webview/core');
 const {splitTableRow, isTableSeparator} = require('./src/webview/markdown');
 
@@ -129,6 +130,18 @@ async function run() {
     assert.deepEqual(splitTableRow('| ID | Status |'), ['ID', 'Status']);
     assert.equal(isTableSeparator('| --- | :---: |'), true);
     assert.equal(isTableSeparator('| ID | Status |'), false);
+
+    // 7. pendingPopout: matches target workspace once, ignores mismatch & expired entries
+    const popFile = path.join(sharedDir, PENDING_FILE);
+    const targetFolder = path.join(tmpBase, 'sim-2');
+    fs.writeFileSync(popFile, JSON.stringify({folder: targetFolder, createdAt: 100000}));
+    assert.equal(consumePendingPopOut(sharedDir, [path.join(tmpBase, 'other')], 105000), false);
+    assert.equal(fs.existsSync(popFile), true, 'Non-matching window must not consume pending pop-out');
+    assert.equal(consumePendingPopOut(sharedDir, [targetFolder], 105000), true);
+    assert.equal(fs.existsSync(popFile), false, 'Matching window must consume pending pop-out once');
+    fs.writeFileSync(popFile, JSON.stringify({folder: targetFolder, createdAt: 100000}));
+    assert.equal(consumePendingPopOut(sharedDir, [targetFolder], 200000), false, 'Expired entry must be ignored');
+    assert.equal(fs.existsSync(popFile), false);
 
     console.log('ALL TESTS PASSED');
   } finally {

@@ -5,6 +5,7 @@ const {Store, NoteStore, OutputStore, categories} = require('./src/storage');
 const {resolveStorageDir, getFontScale, legacyStorageDirs} = require('./src/host/config');
 const {captureSelection, captureFile, formatSnippet} = require('./src/host/editorContext');
 const {createMessageRouter} = require('./src/host/messageRouter');
+const {consumePendingPopOut} = require('./src/host/pendingPopout');
 
 function activate(context) {
   let rootDir = resolveStorageDir(vscode);
@@ -176,6 +177,22 @@ function activate(context) {
     }),
     vscode.window.onDidChangeWindowState(s => { if (s.focused) refreshAll(); })
   );
+
+  // If launched by automation (e.g. /import-download or `imp`), auto-open dashboard in a separate linked window.
+  const openFolders = (vscode.workspace.workspaceFolders || [])
+    .filter(f => f.uri.scheme === 'file')
+    .map(f => f.uri.fsPath);
+  if (consumePendingPopOut(rootDir, openFolders)) {
+    setTimeout(async () => {
+      try {
+        ensureDashboard();
+        await new Promise(r => setTimeout(r, 350));
+        await vscode.commands.executeCommand('workbench.action.moveEditorToNewWindow');
+      } catch {
+        // Dashboard remains open as a normal tab if auxiliary window move is unavailable.
+      }
+    }, 300);
+  }
 
   return {store, noteStore, outputStore, verify};
 }
