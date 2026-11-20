@@ -6,13 +6,7 @@ A zero-dependency **Antigravity IDE** & **VS Code** companion workspace for AI-a
 
 ---
 
-## Screenshots
-
-### Prompt Library Dashboard
-![My AI DevDesk — Prompt Library Dashboard](docs/screenshots/dashboard.jpg)
-
-### Customize View — Template Variables, Code Insertion & AI Integration
-![My AI DevDesk — Customize View with Template Variables](docs/screenshots/customize.jpg)
+![My AI DevDesk — Overview](docs/screenshots/overview.jpg)
 
 ---
 
