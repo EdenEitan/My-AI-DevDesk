@@ -372,7 +372,7 @@ label input, label textarea, label select {
   margin: 0;
 }
 
-/* Prompts Shell â€” Full Width */
+/* Prompts Shell — Full Width */
 .shell {
   flex: 1;
   display: grid;
@@ -728,7 +728,7 @@ details.panelCard summary {
 }
 
 details.panelCard summary::after {
-  content: 'â–¾';
+  content: '▾';
   font-size: 1.15em;
   transition: transform 0.15s ease;
 }
