@@ -19,14 +19,14 @@
       <button id="tabOutputs" class="tabBtn" type="button" role="tab" aria-selected="false">Outputs <span id="countOutputs" class="pill">0</span></button>
     </div>
     <div class="headerControls">
-      <button id="toggleSplit" type="button" aria-pressed="false" title="Show Notes or Outputs side-by-side while working on Prompts">◫ Split</button>
+      <button id="toggleSplit" type="button" aria-pressed="false" title="Show Notes or Outputs side-by-side while working on Prompts">â—« Split</button>
       <div class="scaleGroup" role="group" aria-label="Text size">
-        <button id="scaleSm" type="button" title="Compact text (14px)">A−</button>
+        <button id="scaleSm" type="button" title="Compact text (14px)">Aâˆ’</button>
         <button id="scaleMd" type="button" title="Comfortable text (16px)">A</button>
         <button id="scaleLg" type="button" title="Large text for secondary displays (18px)">A+</button>
       </div>
-      <button id="popOut" type="button" title="Move dashboard into a separate window">Pop out ↗</button>
-      <button id="expand" type="button">Open dashboard ↗</button>
+      <button id="popOut" type="button" title="Move dashboard into a separate window">Pop out â†—</button>
+      <button id="expand" type="button">Open dashboard â†—</button>
     </div>
   </header>
 
@@ -47,22 +47,22 @@
       <section id="browse">
         <div class="heading">
           <h1 id="name"></h1>
-          <button class="primary" id="new" type="button">＋ New prompt</button>
+          <button class="primary" id="new" type="button">ï¼‹ New prompt</button>
         </div>
-        <input id="search" type="search" dir="auto" aria-label="Search all prompts" placeholder="Search all prompts…">
+        <input id="search" type="search" dir="auto" aria-label="Search all prompts" placeholder="Search all promptsâ€¦">
         <div id="cards"></div>
       </section>
 
       <section id="reader" hidden>
         <div class="viewTopBar">
-          <button id="back" type="button">← Back to library</button>
+          <button id="back" type="button">â† Back to library</button>
           <div class="readerActions">
-            <button id="readPin" type="button" class="pinBtn" aria-pressed="false" title="Pin prompt">☆ Pin</button>
+            <button id="readPin" type="button" class="pinBtn" aria-pressed="false" title="Pin prompt">â˜† Pin</button>
             <button class="primary" id="readAntigravity" type="button">Copy &amp; Open Antigravity</button>
             <button id="readCopy" type="button">Copy prompt</button>
             <button id="readCustomize" type="button" class="use">Customize</button>
             <button id="readEdit" type="button">Edit</button>
-            <button id="readVerify" type="button" hidden>Verify AI Output ↗</button>
+            <button id="readVerify" type="button" hidden>Verify AI Output â†—</button>
           </div>
         </div>
         <div class="readerCard">
@@ -74,7 +74,7 @@
 
       <form id="editor" hidden>
         <div class="viewTopBar">
-          <button id="editorBack" type="button">← Back to library</button>
+          <button id="editorBack" type="button">â† Back to library</button>
           <h1 id="formTitle" class="compactTitle"></h1>
         </div>
         <div class="twoColGrid">
@@ -90,7 +90,7 @@
             <div class="panelCard">
               <label class="noTop">Category<select id="category"></select></label>
               <label>Short description <small>Optional</small><input id="description" dir="auto"></label>
-              <label id="itemsLabel">Verification checklist <small>Optional · one task per line</small><textarea rows="4" id="items" dir="auto"></textarea></label>
+              <label id="itemsLabel">Verification checklist <small>Optional Â· one task per line</small><textarea rows="4" id="items" dir="auto"></textarea></label>
               <label id="removeLabel" class="checkRow"><input type="checkbox" id="remove"> Remove attached checklist on save</label>
             </div>
           </aside>
@@ -100,7 +100,7 @@
       <section id="custom" hidden>
         <div class="viewTopBar">
           <div class="titleCluster">
-            <button id="customBack" type="button">← Back</button>
+            <button id="customBack" type="button">â† Back</button>
             <span class="modePill">Temporary copy</span>
             <h1 id="customTitle" class="compactTitle" dir="auto"></h1>
           </div>
@@ -110,7 +110,7 @@
             <div class="draftHeader">
               <label for="draft">Prompt for this task</label>
               <div class="draftTools">
-                <button id="insertSelection" type="button">＋ Insert selected code</button>
+                <button id="insertSelection" type="button">ï¼‹ Insert selected code</button>
               </div>
             </div>
             <textarea rows="17" id="draft" dir="auto"></textarea>
@@ -136,7 +136,7 @@
                 <button id="destChat" type="button" class="segBtn" aria-pressed="false">Chat only</button>
               </div>
               <div id="destHint" class="subtleHint"></div>
-              <button id="appendHubDirective" type="button" class="fullWidthBtn" hidden>＋ Append "Save to Hub Outputs" instruction</button>
+              <button id="appendHubDirective" type="button" class="fullWidthBtn" hidden>ï¼‹ Append "Save to Hub Outputs" instruction</button>
             </div>
 
             <details id="aiCard" class="panelCard">
@@ -146,7 +146,7 @@
                 <div class="inlineRow">
                   <button id="adapt" type="button">Adapt to project</button>
                 </div>
-                <label>Target file<span class="fileRow"><input id="targetFile" type="text" readonly placeholder="Open or choose a file…"><button id="pickFile" type="button">Browse…</button></span></label>
+                <label>Target file<span class="fileRow"><input id="targetFile" type="text" readonly placeholder="Open or choose a fileâ€¦"><button id="pickFile" type="button">Browseâ€¦</button></span></label>
                 <div class="inlineRow">
                   <button id="adaptFile" type="button">Adapt to file</button>
                   <button id="stopAdapt" type="button" hidden>Cancel request</button>
@@ -171,40 +171,40 @@
         <button id="splitTabNotes" type="button" class="segBtn" role="tab" aria-pressed="true">Notes</button>
         <button id="splitTabOutputs" type="button" class="segBtn" role="tab" aria-pressed="false">Outputs</button>
       </div>
-      <button id="closeSplit" type="button" class="miniBtn" title="Close split panel">✕</button>
+      <button id="closeSplit" type="button" class="miniBtn" title="Close split panel">âœ•</button>
     </div>
 
     <div id="splitNotesBody" class="splitBody">
       <div class="splitPickerRow">
         <select id="splitNoteSelect" aria-label="Select a note"></select>
-        <button id="splitNewNote" type="button" class="miniBtn">＋ New</button>
+        <button id="splitNewNote" type="button" class="miniBtn">ï¼‹ New</button>
       </div>
-      <div id="splitNoteEmpty" class="subtleHint" hidden>No notes yet. Click <strong>＋ New</strong> to jot down notes side-by-side.</div>
+      <div id="splitNoteEmpty" class="subtleHint" hidden>No notes yet. Click <strong>ï¼‹ New</strong> to jot down notes side-by-side.</div>
       <div id="splitNoteEditor" class="splitNoteEditor" hidden>
         <div class="splitNoteTitleRow">
-          <input id="splitNoteTitle" type="text" dir="auto" placeholder="Note title…" aria-label="Split note title">
-          <span id="splitNoteSaveState" class="saveBadge saved">Saved ✓</span>
+          <input id="splitNoteTitle" type="text" dir="auto" placeholder="Note titleâ€¦" aria-label="Split note title">
+          <span id="splitNoteSaveState" class="saveBadge saved">Saved âœ“</span>
         </div>
         <div class="splitActions">
-          <button id="splitInsertNote" type="button" class="miniBtn use" hidden>＋ Insert into prompt</button>
+          <button id="splitInsertNote" type="button" class="miniBtn use" hidden>ï¼‹ Insert into prompt</button>
           <button id="splitCopyNote" type="button" class="miniBtn">Copy</button>
         </div>
-        <textarea id="splitNoteBody" dir="auto" placeholder="Type notes in Hebrew or English alongside your prompts…"></textarea>
+        <textarea id="splitNoteBody" dir="auto" placeholder="Type notes in Hebrew or English alongside your promptsâ€¦"></textarea>
       </div>
     </div>
 
     <div id="splitOutputsBody" class="splitBody" hidden>
       <div class="splitPickerRow">
         <select id="splitOutputSelect" aria-label="Select an output document"></select>
-        <button id="splitRefreshOutputs" type="button" class="miniBtn" title="Refresh outputs">↻</button>
+        <button id="splitRefreshOutputs" type="button" class="miniBtn" title="Refresh outputs">â†»</button>
       </div>
-      <div id="splitOutputEmpty" class="subtleHint" hidden>No saved outputs yet. Save a Markdown file in Hub Outputs or use <strong>＋ Paste MD</strong> in the Outputs tab.</div>
+      <div id="splitOutputEmpty" class="subtleHint" hidden>No saved outputs yet. Save a Markdown file in Hub Outputs or use <strong>ï¼‹ Paste MD</strong> in the Outputs tab.</div>
       <div id="splitOutputViewer" class="splitOutputViewer" hidden>
         <div class="splitActions">
-          <button id="splitInsertOutputPath" type="button" class="miniBtn use" hidden>＋ Insert path</button>
-          <button id="splitInsertOutputContent" type="button" class="miniBtn use" hidden>＋ Insert text</button>
+          <button id="splitInsertOutputPath" type="button" class="miniBtn use" hidden>ï¼‹ Insert path</button>
+          <button id="splitInsertOutputContent" type="button" class="miniBtn use" hidden>ï¼‹ Insert text</button>
           <button id="splitCopyOutputPath" type="button" class="miniBtn">Copy path</button>
-          <button id="splitOpenOutputIde" type="button" class="miniBtn">IDE ↗</button>
+          <button id="splitOpenOutputIde" type="button" class="miniBtn">IDE â†—</button>
         </div>
         <article id="splitOutputRendered" class="mdView splitMdView" dir="auto"></article>
       </div>
@@ -217,30 +217,30 @@
     <aside class="listPane">
       <div class="paneHeader">
         <h2>Quick Notes</h2>
-        <button id="newNote" class="primary" type="button">＋ New</button>
+        <button id="newNote" class="primary" type="button">ï¼‹ New</button>
       </div>
-      <input id="noteSearch" type="search" dir="auto" placeholder="Filter notes…">
+      <input id="noteSearch" type="search" dir="auto" placeholder="Filter notesâ€¦">
       <div id="noteList" class="itemList"></div>
     </aside>
     <section class="detailPane">
       <div id="noteEmpty" class="emptyPane">
-        <div class="emptyIcon">✎</div>
+        <div class="emptyIcon">âœŽ</div>
         <h3>Personal Scratchpad (RTL &amp; LTR)</h3>
         <p>Write quick notes in Hebrew or English with automatic direction, auto-saved across VS Code and Antigravity IDE.</p>
-        <button id="emptyNewNote" class="primary" type="button">＋ Create your first note</button>
+        <button id="emptyNewNote" class="primary" type="button">ï¼‹ Create your first note</button>
       </div>
       <div id="noteEditorWrap" class="noteWorkspace" hidden>
         <div class="noteTopBar">
-          <input id="noteTitle" type="text" dir="auto" placeholder="Note title…" aria-label="Note title">
+          <input id="noteTitle" type="text" dir="auto" placeholder="Note titleâ€¦" aria-label="Note title">
           <span id="noteSaveState" class="saveBadge">Saved</span>
         </div>
         <div class="toolBar">
-          <button id="noteInsertSelection" type="button">＋ Insert selected code</button>
+          <button id="noteInsertSelection" type="button">ï¼‹ Insert selected code</button>
           <button id="noteCopy" type="button">Copy note</button>
           <button id="noteOpenAntigravity" class="primary" type="button">Copy &amp; Open Antigravity</button>
           <button id="noteDelete" type="button" class="dangerBtn">Delete</button>
         </div>
-        <textarea id="noteBody" dir="auto" placeholder="Start typing notes in English or Hebrew…"></textarea>
+        <textarea id="noteBody" dir="auto" placeholder="Start typing notes in English or Hebrewâ€¦"></textarea>
       </div>
     </section>
   </div>
@@ -251,12 +251,12 @@
       <div class="paneHeader">
         <h2>Saved Outputs</h2>
         <div class="inlineRow">
-          <button id="pasteOutput" class="primary" type="button" title="Paste Markdown from clipboard as a new Hub document">＋ Paste MD</button>
-          <button id="newOutput" type="button" title="Create blank Markdown document">＋ New</button>
-          <button id="refreshOutputs" type="button" title="Refresh outputs folder">↻</button>
+          <button id="pasteOutput" class="primary" type="button" title="Paste Markdown from clipboard as a new Hub document">ï¼‹ Paste MD</button>
+          <button id="newOutput" type="button" title="Create blank Markdown document">ï¼‹ New</button>
+          <button id="refreshOutputs" type="button" title="Refresh outputs folder">â†»</button>
         </div>
       </div>
-      <input id="outputSearch" type="search" dir="auto" placeholder="Filter outputs…">
+      <input id="outputSearch" type="search" dir="auto" placeholder="Filter outputsâ€¦">
       <div id="outputList" class="itemList"></div>
       <div class="folderFoot">
         <small id="outputsFolderLabel"></small>
@@ -265,11 +265,11 @@
     </aside>
     <section class="detailPane">
       <div id="outputEmpty" class="emptyPane">
-        <div class="emptyIcon">▤</div>
+        <div class="emptyIcon">â–¤</div>
         <h3>Hub Markdown Outputs</h3>
-        <p>Store AI-generated specs, test scenarios, and reports here instead of cluttering your project repository—rendered with tables and interactive checkboxes.</p>
+        <p>Store AI-generated specs, test scenarios, and reports here instead of cluttering your project repositoryâ€”rendered with tables and interactive checkboxes.</p>
         <div class="inlineRow centerRow">
-          <button id="emptyPasteOutput" class="primary" type="button">＋ Paste Markdown from Clipboard</button>
+          <button id="emptyPasteOutput" class="primary" type="button">ï¼‹ Paste Markdown from Clipboard</button>
           <button id="emptyNewOutput" type="button">Create blank doc</button>
         </div>
       </div>
@@ -283,7 +283,7 @@
           <input id="outputCreateName" required type="text" placeholder="e.g. quote/03-test-scenarios.md">
         </label>
         <label>Markdown content
-          <textarea id="outputCreateContent" rows="16" dir="auto" placeholder="Paste or write Markdown…"></textarea>
+          <textarea id="outputCreateContent" rows="16" dir="auto" placeholder="Paste or write Markdownâ€¦"></textarea>
         </label>
         <footer class="formActions">
           <button type="submit" class="primary">Save document</button>
@@ -304,7 +304,7 @@
             </div>
             <button id="outputCopyPath" type="button">Copy path</button>
             <button id="outputCopyMd" type="button">Copy MD</button>
-            <button id="outputOpenIde" type="button">Open in IDE ↗</button>
+            <button id="outputOpenIde" type="button">Open in IDE â†—</button>
             <button id="outputDelete" type="button" class="dangerBtn">Delete</button>
           </div>
         </div>
@@ -321,6 +321,12 @@
   </div>
 
   <div id="status" class="toastBar" role="status"></div>
-  <script nonce="NONCE_VALUE" src="SCRIPT_URI"></script>
+  <script nonce="NONCE_VALUE" src="SCRIPT_CORE_URI"></script>
+  <script nonce="NONCE_VALUE" src="SCRIPT_MARKDOWN_URI"></script>
+  <script nonce="NONCE_VALUE" src="SCRIPT_PROMPTS_URI"></script>
+  <script nonce="NONCE_VALUE" src="SCRIPT_NOTES_URI"></script>
+  <script nonce="NONCE_VALUE" src="SCRIPT_OUTPUTS_URI"></script>
+  <script nonce="NONCE_VALUE" src="SCRIPT_SPLIT_URI"></script>
+  <script nonce="NONCE_VALUE" src="SCRIPT_MAIN_URI"></script>
 </body>
 </html>

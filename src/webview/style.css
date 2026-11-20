@@ -372,7 +372,7 @@ label input, label textarea, label select {
   margin: 0;
 }
 
-/* Prompts Shell — Full Width */
+/* Prompts Shell â€” Full Width */
 .shell {
   flex: 1;
   display: grid;
@@ -728,7 +728,7 @@ details.panelCard summary {
 }
 
 details.panelCard summary::after {
-  content: '▾';
+  content: 'â–¾';
   font-size: 1.15em;
   transition: transform 0.15s ease;
 }
@@ -737,7 +737,7 @@ details.panelCard[open] summary::after {
   transform: rotate(180deg);
 }
 
-.refNotesBody, .aiBody {
+.aiBody {
   margin-top: 12px;
 }
 
@@ -757,30 +757,6 @@ details.panelCard[open] summary::after {
 .fileRow button {
   flex: 0 0 auto;
   margin: 0;
-}
-
-.refNotesBar {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-bottom: 10px;
-}
-
-.refNotesBar select { flex: 1; padding: 7px 10px; }
-.refNotesBar button { white-space: nowrap; padding: 7px 10px; font-size: 0.88em; }
-
-.refNotePreview {
-  max-height: 220px;
-  overflow: auto;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  font-size: 0.9em;
-  line-height: 1.55;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
-  background: var(--vscode-editor-background);
-  border: 1px solid var(--vscode-panel-border);
-  color: var(--vscode-editor-foreground);
 }
 
 /* Customize Specifics */
@@ -1243,5 +1219,4 @@ details.panelCard[open] summary::after {
   .itemList { max-height: 180px; }
   .mainArea, .detailPane { padding: 14px; }
   .category { padding: 6px 8px; }
-  .refNotesBar { flex-direction: column; align-items: stretch; }
 }

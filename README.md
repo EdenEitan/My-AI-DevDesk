@@ -69,6 +69,41 @@ A zero-dependency **Antigravity IDE** & **VS Code** companion workspace for AI-a
 
 ---
 
+## Project Structure
+
+```text
+my-ai-devdesk/
+├── package.json                 # Extension manifest, views, commands, and settings
+├── extension.js                 # Thin extension entrypoint (wires stores, watcher, webviews)
+├── mark.svg                     # Activity Bar twin-sparkles icon
+├── src/
+│   ├── storage/                 # Atomic persistence layer (zero external dependencies)
+│   │   ├── fsUtils.js           # Atomic write (.tmp -> rename) and UUID validation
+│   │   ├── promptStore.js       # Prompt & checklist CRUD, pin toggle, legacy migration
+│   │   ├── noteStore.js         # Quick Notes persistence
+│   │   ├── outputStore.js       # Hub Markdown Outputs CRUD, path guards, checkbox toggle
+│   │   └── index.js
+│   ├── host/                    # VS Code extension host layer
+│   │   ├── config.js            # Storage path resolution, font scale, legacy directories
+│   │   ├── editorContext.js     # Active selection/file capture and Markdown snippet formatter
+│   │   ├── adapt.js             # Ephemeral read-only Codex CLI wrapper (project & file)
+│   │   └── messageRouter.js     # Declarative Webview message dispatch table
+│   └── webview/                 # Modular frontend UI (strict CSP nonce, no bundler)
+│       ├── index.html           # Semantic markup with nonce placeholders
+│       ├── style.css            # Theme-aware full-width responsive styles
+│       ├── core.js              # Shared state, VS Code bridge, DOM & {{variable}} helpers
+│       ├── markdown.js          # Pure-DOM XSS-safe Markdown renderer (tables & checkboxes)
+│       ├── prompts.js           # Library browse, reader, editor, customize, AI adaptation
+│       ├── notes.js             # Quick Notes workspace & debounced auto-save
+│       ├── outputs.js           # Hub Outputs viewer, raw editor & clipboard paste
+│       ├── splitPane.js         # Docked side-by-side Split Panel (Notes & Outputs)
+│       └── main.js              # Topbar navigation & message dispatch bootstrap
+├── test.js                      # Unit tests (storage, editorContext, messageRouter, webview helpers)
+└── LICENSE                      # MIT License
+```
+
+---
+
 ## Testing
 
 Run unit tests with Node.js (v18+):
