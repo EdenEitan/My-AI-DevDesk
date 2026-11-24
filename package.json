@@ -13,7 +13,7 @@
 		"onStartupFinished"
 	],
 	"scripts": {
-		"test": "node test.js"
+		"test": "node --test test.js"
 	},
 	"extensionKind": [
 		"ui"

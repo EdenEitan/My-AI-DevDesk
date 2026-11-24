@@ -2,6 +2,8 @@
 
 *(formerly Eden's Prompt Hub)*
 
+[![CI — Tests & Security Contract](https://github.com/EdenEitan/My-AI-DevDesk/actions/workflows/ci.yml/badge.svg)](https://github.com/EdenEitan/My-AI-DevDesk/actions/workflows/ci.yml)
+
 A zero-dependency **Antigravity IDE** & **VS Code** companion workspace for AI-assisted engineering and testing — combining a parameterized prompt library, pinned quick-launch favorites, a reusable **`SKILL.md` Skills Repository** with 1-click project/global sync, RTL/LTR Quick Notes, rendered Markdown AI Outputs, live code snippet insertion, and verification checklists in one fluid interface built for both the IDE sidebar and secondary displays (such as an iPad).
 
 ---
@@ -110,13 +112,27 @@ my-ai-devdesk/
 
 ---
 
-## Testing
+## Testing & Continuous Integration (CI)
 
-Run unit tests with Node.js (v18+):
+Run the structured zero-dependency test suite (`node:test`) with Node.js (v18+):
 
 ```bash
-node test.js
+npm test
+# or directly:
+node --test test.js
 ```
+
+The test suite runs 8 isolated test suites (using temporary directories in `os.tmpdir()`) covering:
+1. **`PromptStore`:** CRUD, pinned favorites, checklists, `.lock` concurrency, corrupted-file recovery, and non-destructive legacy migration.
+2. **`NoteStore`:** CRUD, RTL/LTR notes, optimistic `revision` checks, and legacy format upgrades.
+3. **`OutputStore`:** Nested Markdown persistence, path-traversal protection, and interactive checkbox toggling.
+4. **`SkillStore`:** `SKILL.md` YAML frontmatter parsing/serialization (`>-`, `|`, quoted), CRUD, slug renaming, checkbox toggling, and 1-click project/global export.
+5. **`Host Config & EditorContext`:** Storage path resolution, font scale presets, editor selection formatting with nested fence escaping, and `pendingPopout` markers.
+6. **`MessageRouter` Integration:** End-to-end Webview ↔ Host message dispatch across Prompts, Notes, Outputs, Skills, and Clipboard.
+7. **`Webview Helpers & Markdown Parser`:** Template `{{variable}}` extraction/rendering and GFM table parsing.
+8. **`Static Security & Asset Contract`:** Verifies strict CSP nonces, placeholder wiring between `index.html` and `extension.js`, and zero `innerHTML`/`outerHTML` usage across all webview scripts.
+
+Every push, pull request, or version tag (`v*`) on GitHub automatically runs `.github/workflows/ci.yml` across **Ubuntu, Windows, and macOS** on **Node.js 20 and 22**.
 
 ---
 
