@@ -17,6 +17,7 @@
       <button id="tabPrompts" class="tabBtn" type="button" role="tab" aria-selected="true">Prompts <span id="countPrompts" class="pill">0</span></button>
       <button id="tabNotes" class="tabBtn" type="button" role="tab" aria-selected="false">Notes <span id="countNotes" class="pill">0</span></button>
       <button id="tabOutputs" class="tabBtn" type="button" role="tab" aria-selected="false">Outputs <span id="countOutputs" class="pill">0</span></button>
+      <button id="tabSkills" class="tabBtn" type="button" role="tab" aria-selected="false">Skills <span id="countSkills" class="pill">0</span></button>
     </div>
     <div class="headerControls">
       <button id="toggleSplit" type="button" aria-pressed="false" title="Show Notes or Outputs side-by-side while working on Prompts">◫ Split</button>
@@ -320,12 +321,123 @@
     </section>
   </div>
 
+  <!-- MODULE S: SKILLS REPOSITORY (SKILL.md) -->
+  <div id="skillsModule" class="masterDetail" hidden>
+    <aside class="listPane">
+      <div class="paneHeader">
+        <h2>Skills Library</h2>
+        <div class="inlineRow">
+          <button id="newSkill" class="primary" type="button" title="Create a new SKILL.md skill">＋ New</button>
+          <button id="pasteSkill" type="button" title="Paste SKILL.md from clipboard">＋ Paste</button>
+          <button id="refreshSkills" type="button" title="Refresh skills folder">↻</button>
+        </div>
+      </div>
+      <input id="skillSearch" type="search" dir="auto" placeholder="Filter skills…">
+      <div id="skillList" class="itemList"></div>
+      <div class="folderFoot">
+        <small id="skillsFolderLabel"></small>
+        <button id="copySkillsFolder" type="button" class="miniBtn">Copy folder</button>
+      </div>
+    </aside>
+    <section class="detailPane">
+      <div id="skillEmpty" class="emptyPane">
+        <div class="emptyIcon">⚡</div>
+        <h3>Skills Repository (SKILL.md)</h3>
+        <p>Build and maintain reusable Antigravity <code>SKILL.md</code> runbooks with YAML frontmatter (<code>name</code> &amp; <code>description</code>), stored in your Hub and synced to projects or global config in one click.</p>
+        <div class="inlineRow centerRow">
+          <button id="emptyNewSkill" class="primary" type="button">＋ Build new Skill</button>
+          <button id="emptyPasteSkill" type="button">＋ Paste SKILL.md from Clipboard</button>
+        </div>
+      </div>
+
+      <form id="skillForm" class="outputCreate" hidden>
+        <div class="viewTopBar">
+          <h1 id="skillFormTitle" class="compactTitle">Build New Skill (SKILL.md)</h1>
+          <button id="skillFormCancel" type="button">Cancel</button>
+        </div>
+        <div class="twoColGrid">
+          <div class="colMain">
+            <label>Instructions (Markdown Body) <small>Steps, commands, examples, and verification rules</small>
+              <textarea id="skillBodyInput" rows="18" dir="auto" required placeholder="# My Skill&#10;&#10;Provide step-by-step instructions for the agent…"></textarea>
+            </label>
+            <footer class="formActions">
+              <button type="submit" class="primary">Save SKILL.md</button>
+              <button id="skillFormCancel2" type="button">Cancel</button>
+            </footer>
+          </div>
+          <aside class="colAside">
+            <div class="panelCard">
+              <div class="cardHeading">YAML Frontmatter</div>
+              <label class="noTop">Skill name (slug) <small>Lowercase &amp; hyphens, e.g. api-test-runner</small>
+                <input id="skillNameInput" required type="text" dir="ltr" placeholder="e.g. api-test-runner">
+              </label>
+              <label>Trigger description <small>Required · tells the agent WHEN and WHY to activate this skill</small>
+                <textarea id="skillDescInput" rows="5" dir="auto" required placeholder="Use this skill when the user asks to…"></textarea>
+              </label>
+              <div id="skillPreviewPath" class="subtleHint"></div>
+            </div>
+          </aside>
+        </div>
+      </form>
+
+      <div id="skillDetailWrap" class="outputWorkspace" hidden>
+        <div class="outputTopBar">
+          <div class="outputTitleCluster">
+            <div class="inlineRow">
+              <span class="modePill">SKILL.md</span>
+              <h2 id="skillTitle" class="outputHeading"></h2>
+            </div>
+            <span id="skillMeta" class="subtleHint"></span>
+          </div>
+          <div class="toolBar">
+            <div class="segmented" role="group" aria-label="Skill view mode">
+              <button id="skillModeView" type="button" class="segBtn" aria-pressed="true">Rendered</button>
+              <button id="skillModeForm" type="button" class="segBtn" aria-pressed="false">Edit form</button>
+              <button id="skillModeRaw" type="button" class="segBtn" aria-pressed="false">Edit raw</button>
+            </div>
+            <button id="skillCopyMd" type="button">Copy SKILL.md</button>
+            <button id="skillCopyPath" type="button">Copy path</button>
+            <button id="skillOpenIde" type="button">Open in IDE ↗</button>
+            <button id="skillDelete" type="button" class="dangerBtn">Delete</button>
+          </div>
+        </div>
+
+        <div class="skillFrontmatterCard">
+          <div class="skillFmMeta">
+            <div class="skillFmDescWrap">
+              <span class="cardHeading">Trigger Description (Frontmatter)</span>
+              <p id="skillDescView" dir="auto"></p>
+            </div>
+            <div class="skillSyncBox">
+              <span class="cardHeading">1-Click Sync / Export</span>
+              <div class="inlineRow">
+                <select id="skillTargetProject" aria-label="Target project workspace for .agents/skills export"></select>
+                <button id="skillExportProject" type="button" class="primary" title="Export to <project>/.agents/skills/<name>/SKILL.md">Sync to Project (.agents) ↗</button>
+                <button id="skillExportGlobal" type="button" class="use" title="Export to ~/.gemini/config/skills/<name>/SKILL.md">Sync to Global (~/.gemini) ↗</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <article id="skillRendered" class="mdView" dir="auto"></article>
+        <div id="skillRawWrap" class="outputRawWrap" hidden>
+          <textarea id="skillRawEditor" dir="auto"></textarea>
+          <footer class="formActions">
+            <button id="skillSaveRaw" class="primary" type="button">Save SKILL.md</button>
+            <button id="skillCancelRaw" type="button">Cancel</button>
+          </footer>
+        </div>
+      </div>
+    </section>
+  </div>
+
   <div id="status" class="toastBar" role="status"></div>
   <script nonce="NONCE_VALUE" src="SCRIPT_CORE_URI"></script>
   <script nonce="NONCE_VALUE" src="SCRIPT_MARKDOWN_URI"></script>
   <script nonce="NONCE_VALUE" src="SCRIPT_PROMPTS_URI"></script>
   <script nonce="NONCE_VALUE" src="SCRIPT_NOTES_URI"></script>
   <script nonce="NONCE_VALUE" src="SCRIPT_OUTPUTS_URI"></script>
+  <script nonce="NONCE_VALUE" src="SCRIPT_SKILLS_URI"></script>
   <script nonce="NONCE_VALUE" src="SCRIPT_SPLIT_URI"></script>
   <script nonce="NONCE_VALUE" src="SCRIPT_MAIN_URI"></script>
 </body>

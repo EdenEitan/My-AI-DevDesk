@@ -1,4 +1,5 @@
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const {adapt, executable} = require('./adapt');
 const {captureSelection, formatSnippet} = require('./editorContext');
@@ -185,6 +186,71 @@ function createMessageRouter(ctx, web) {
       outputStore.remove(relPath);
       web.postMessage({type: 'outputDeleted', relPath});
       ctx.refreshOutputs();
+    },
+    refreshSkills: () => { ctx.refreshSkills(); },
+    readSkill: m => {
+      const doc = ctx.getSkillStore().read(m.slug);
+      web.postMessage({type: 'skillContent', ...doc});
+    },
+    saveSkill: m => {
+      const skillStore = ctx.getSkillStore();
+      const saved = skillStore.save({
+        slug: m.slug,
+        previousSlug: m.previousSlug,
+        name: m.name,
+        description: m.description,
+        body: m.body,
+        rawContent: m.rawContent
+      });
+      const doc = skillStore.read(saved.slug);
+      ctx.refreshSkills();
+      web.postMessage({type: 'skillSaved', previousSlug: m.previousSlug || null, ...doc});
+    },
+    pasteSkillFromClipboard: async () => {
+      const clip = await vscode.env.clipboard.readText();
+      web.postMessage({type: 'clipboardForSkill', content: clip || ''});
+    },
+    toggleSkillCheckbox: m => {
+      const updated = ctx.getSkillStore().toggleCheckbox(m.slug, m.lineIndex);
+      web.postMessage({type: 'skillContent', ...updated});
+    },
+    openSkillInEditor: async m => {
+      const {fullPath} = ctx.getSkillStore().safeSkillPath(m.slug);
+      const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(fullPath));
+      await vscode.window.showTextDocument(doc, {preview: false});
+    },
+    deleteSkill: async m => {
+      const skillStore = ctx.getSkillStore();
+      const {slug} = skillStore.safeSkillPath(m.slug);
+      if (await vscode.window.showWarningMessage(
+        'Delete skill "' + slug + '" (SKILL.md)?',
+        {modal: true},
+        'Delete'
+      ) !== 'Delete') return;
+      skillStore.remove(slug);
+      web.postMessage({type: 'skillDeleted', slug});
+      ctx.refreshSkills();
+    },
+    exportSkill: m => {
+      const skillStore = ctx.getSkillStore();
+      const target = m.target === 'global' ? 'global' : 'project';
+      let targetSkillsRoot;
+      if (target === 'global') {
+        const home = ctx.globalConfigRoot || path.join(os.homedir(), '.gemini', 'config');
+        targetSkillsRoot = path.join(home, 'skills');
+      } else {
+        const folders = (vscode.workspace?.workspaceFolders || [])
+          .filter(f => f.uri?.scheme === 'file')
+          .map(f => f.uri.fsPath);
+        const requested = typeof m.folder === 'string' && m.folder.trim() ? m.folder.trim() : '';
+        const chosen = requested && folders.includes(requested) ? requested : (folders[0] || '');
+        if (!chosen) {
+          throw Error('Open a local project folder in the IDE to sync skills to .agents/skills/.');
+        }
+        targetSkillsRoot = path.join(chosen, '.agents', 'skills');
+      }
+      const res = skillStore.exportToDir(m.slug, targetSkillsRoot);
+      web.postMessage({type: 'skillExported', slug: res.slug, target, exportedPath: res.exportedPath});
     }
   };
 

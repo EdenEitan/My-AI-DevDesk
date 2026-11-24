@@ -90,7 +90,14 @@
     activeOutputPath: null,
     activeOutputFullPath: '',
     activeOutputContent: '',
-    outputViewMode: 'rendered'
+    outputViewMode: 'rendered',
+    skills: [],
+    skillsPath: '',
+    activeSkillSlug: null,
+    activeSkillDoc: null,
+    editingSkillSlug: null,
+    skillViewMode: 'rendered',
+    workspaceFolders: []
   };
 
   let statusTimer = null;

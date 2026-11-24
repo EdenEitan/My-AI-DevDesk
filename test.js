@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const {Store, NoteStore, OutputStore, categories} = require('./src/storage');
+const {Store, NoteStore, OutputStore, SkillStore, parseSkillMarkdown, buildSkillMarkdown, categories} = require('./src/storage');
 const {formatSnippet} = require('./src/host/editorContext');
 const {createMessageRouter} = require('./src/host/messageRouter');
 const {PENDING_FILE, consumePendingPopOut} = require('./src/host/pendingPopout');
@@ -89,6 +89,57 @@ async function run() {
     const toggled2 = outputStore.toggleCheckbox('quote/03-test-scenarios.md', 6);
     assert.ok(toggled2.content.includes('- [ ] Check 422'));
 
+    // 3b. SkillStore: SKILL.md YAML frontmatter, CRUD, rename, checkbox toggle, and 1-click export
+    const skillStore = new SkillStore(sharedDir);
+    const savedSkill = skillStore.save({
+      name: 'API Contract Validator!',
+      description: 'Use this skill when validating FastAPI endpoints and negative 422 contracts.',
+      body: '# API Contract Validator\n\n## Steps\n\n- [ ] Run pytest contract suite\n- [x] Inspect OpenAPI schema\n'
+    });
+    assert.equal(savedSkill.slug, 'api-contract-validator');
+    assert.equal(skillStore.list().items.length, 1);
+
+    const readSkill = skillStore.read('api-contract-validator');
+    assert.equal(readSkill.name, 'api-contract-validator');
+    assert.equal(readSkill.description, 'Use this skill when validating FastAPI endpoints and negative 422 contracts.');
+    assert.ok(readSkill.content.startsWith('---\nname: api-contract-validator\ndescription: >-\n'));
+    assert.ok(readSkill.body.startsWith('# API Contract Validator'));
+
+    // Frontmatter parse & build round-trip
+    const parsedFm = parseSkillMarkdown(buildSkillMarkdown({
+      name: 'db-migration-check',
+      description: 'Line one.\nLine two.',
+      body: '# DB Check\n\nRun alembic.'
+    }));
+    assert.equal(parsedFm.name, 'db-migration-check');
+    assert.equal(parsedFm.description, 'Line one. Line two.');
+    assert.equal(parsedFm.body, '# DB Check\n\nRun alembic.\n');
+
+    // Rename skill removes old slug directory cleanly
+    const renamedSkill = skillStore.save({
+      previousSlug: 'api-contract-validator',
+      name: 'fastapi-contract-validator',
+      description: 'Updated description for FastAPI contracts.',
+      body: readSkill.body
+    });
+    assert.equal(renamedSkill.slug, 'fastapi-contract-validator');
+    assert.equal(skillStore.list().items.length, 1);
+    assert.throws(() => skillStore.read('api-contract-validator'), /Skill not found/);
+
+    // Checkbox toggle inside SKILL.md
+    const skillLines = skillStore.read('fastapi-contract-validator').content.split(/\r?\n/);
+    const cbIdx = skillLines.findIndex(l => l.includes('- [ ] Run pytest contract suite'));
+    assert.ok(cbIdx > 0);
+    const toggledSkill = skillStore.toggleCheckbox('fastapi-contract-validator', cbIdx);
+    assert.ok(toggledSkill.content.includes('- [x] Run pytest contract suite'));
+
+    // Export skill to project .agents/skills and global ~/.gemini/config/skills
+    const fakeProjectDir = path.join(tmpBase, 'my-project');
+    const fakeGlobalDir = path.join(tmpBase, 'global-config');
+    const exportedProj = skillStore.exportToDir('fastapi-contract-validator', path.join(fakeProjectDir, '.agents', 'skills'));
+    assert.ok(fs.existsSync(exportedProj.exportedPath));
+    assert.equal(fs.readFileSync(exportedProj.exportedPath, 'utf8'), toggledSkill.content);
+
     // 4. editorContext: formatSnippet (single line, range, backtick fence escaping)
     const single = formatSnippet({fileName: 'a.py', languageId: 'python', startLine: 5, endLine: 5, text: 'x = 1'});
     assert.equal(single, 'File: `a.py` (line 5)\n```python\nx = 1\n```');
@@ -99,13 +150,19 @@ async function run() {
     const posted = [];
     let refreshedLib = 0;
     const router = createMessageRouter({
-      vscode: {env: {clipboard: {writeText: async () => {}}}},
+      vscode: {
+        env: {clipboard: {writeText: async () => {}}},
+        workspace: {workspaceFolders: [{uri: {scheme: 'file', fsPath: fakeProjectDir}}]}
+      },
+      globalConfigRoot: fakeGlobalDir,
       getStore: () => sharedStore,
       getNoteStore: () => noteStore,
       getOutputStore: () => outputStore,
+      getSkillStore: () => skillStore,
       refreshLibrary: () => { refreshedLib++; },
       refreshNotes: () => {},
       refreshOutputs: () => {},
+      refreshSkills: () => {},
       refreshAll: () => {}
     }, {postMessage: msg => posted.push(msg)});
 
@@ -118,8 +175,15 @@ async function run() {
     assert.equal(posted[1].type, 'outputContent');
     assert.equal(posted[1].target, 'split');
 
+    await router.dispatch({type: 'exportSkill', slug: 'fastapi-contract-validator', target: 'global'});
+    assert.equal(posted[2].type, 'skillExported');
+    assert.equal(posted[2].target, 'global');
+    assert.ok(fs.existsSync(path.join(fakeGlobalDir, 'skills', 'fastapi-contract-validator', 'SKILL.md')));
+
     outputStore.remove('quote/03-test-scenarios.md');
     assert.equal(outputStore.list().items.length, 0);
+    skillStore.remove('fastapi-contract-validator');
+    assert.equal(skillStore.list().items.length, 0);
 
     // 6. Webview pure helpers: template variables & Markdown table parsing
     assert.deepEqual(extractVariables('Hello {{endpoint}} and {{my_prompt}} and {{endpoint}}'), ['endpoint', 'my_prompt']);

@@ -1,10 +1,10 @@
 const vscode = require('vscode');
 const fs = require('node:fs');
-const {randomBytes} = require('node:crypto');
-const {Store, NoteStore, OutputStore, categories} = require('./src/storage');
-const {resolveStorageDir, getFontScale, legacyStorageDirs} = require('./src/host/config');
-const {captureSelection, captureFile, formatSnippet} = require('./src/host/editorContext');
-const {createMessageRouter} = require('./src/host/messageRouter');
+const { randomBytes } = require('node:crypto');
+const { Store, NoteStore, OutputStore, SkillStore, categories } = require('./src/storage');
+const { resolveStorageDir, getFontScale, legacyStorageDirs } = require('./src/host/config');
+const { captureSelection, captureFile, formatSnippet } = require('./src/host/editorContext');
+const { createMessageRouter } = require('./src/host/messageRouter');
 const {consumePendingPopOut} = require('./src/host/pendingPopout');
 
 function activate(context) {
@@ -12,6 +12,7 @@ function activate(context) {
   let store = new Store(rootDir);
   let noteStore = new NoteStore(rootDir);
   let outputStore = new OutputStore(rootDir);
+  let skillStore = new SkillStore(rootDir);
   store.migrateFromIfEmpty(legacyStorageDirs(context));
 
   const views = new Set();
@@ -20,6 +21,8 @@ function activate(context) {
   let lastFile = captureFile(vscode.window.activeTextEditor);
   let outputWatcher;
   let watchTimer;
+  let skillWatcher;
+  let skillWatchTimer;
 
   function broadcast(payload) {
     for (const web of views) web.postMessage(payload);
@@ -43,17 +46,25 @@ function activate(context) {
   }
 
   function refreshNotes() {
-    broadcast({type: 'notes', ...noteStore.list()});
+    broadcast({ type: 'notes', ...noteStore.list() });
   }
 
   function refreshOutputs() {
-    broadcast({type: 'outputs', ...outputStore.list()});
+    broadcast({ type: 'outputs', ...outputStore.list() });
+  }
+
+  function refreshSkills() {
+    const folders = (vscode.workspace.workspaceFolders || [])
+      .filter(f => f.uri.scheme === 'file')
+      .map(f => f.uri.fsPath);
+    broadcast({ type: 'skills', folders, ...skillStore.list() });
   }
 
   function refreshAll() {
     refreshLibrary();
     refreshNotes();
     refreshOutputs();
+    refreshSkills();
   }
 
   function startOutputWatcher() {
@@ -62,7 +73,7 @@ function activate(context) {
       outputWatcher = undefined;
     }
     try {
-      outputWatcher = fs.watch(outputStore.root, {recursive: true}, () => {
+      outputWatcher = fs.watch(outputStore.root, { recursive: true }, () => {
         clearTimeout(watchTimer);
         watchTimer = setTimeout(refreshOutputs, 250);
       });
@@ -71,12 +82,29 @@ function activate(context) {
       // Fallback: outputs still refresh on window focus and manual Refresh button.
     }
   }
+
+  function startSkillWatcher() {
+    if (skillWatcher) {
+      try { skillWatcher.close(); } catch { /* ignore */ }
+      skillWatcher = undefined;
+    }
+    try {
+      skillWatcher = fs.watch(skillStore.root, { recursive: true }, () => {
+        clearTimeout(skillWatchTimer);
+        skillWatchTimer = setTimeout(refreshSkills, 250);
+      });
+      skillWatcher.on('error', () => { /* ignore transient fs.watch errors */ });
+    } catch {
+      // Fallback: skills still refresh on window focus and manual Refresh button.
+    }
+  }
   startOutputWatcher();
+  startSkillWatcher();
 
   async function verify(id) {
     const p = store.read(id);
     const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(store.file(p.checklist, '.md')));
-    await vscode.window.showTextDocument(doc, {preview: false});
+    await vscode.window.showTextDocument(doc, { preview: false });
     return doc;
   }
 
@@ -89,7 +117,7 @@ function activate(context) {
       'edenHub.dashboard',
       'My AI DevDesk',
       vscode.ViewColumn.Active,
-      {enableScripts: true, retainContextWhenHidden: true}
+      { enableScripts: true, retainContextWhenHidden: true }
     );
     panel.onDidDispose(() => { panel = undefined; });
     attach(panel, false);
@@ -101,6 +129,7 @@ function activate(context) {
     getStore: () => store,
     getNoteStore: () => noteStore,
     getOutputStore: () => outputStore,
+    getSkillStore: () => skillStore,
     getLastSelection: () => lastSelection,
     getLastFile: () => lastFile,
     setLastFile: f => { lastFile = f; },
@@ -108,6 +137,7 @@ function activate(context) {
     refreshLibrary,
     refreshNotes,
     refreshOutputs,
+    refreshSkills,
     refreshAll,
     ensureDashboard,
     verify
@@ -117,7 +147,7 @@ function activate(context) {
     const web = owner.webview;
     const root = context.extensionUri;
     const webRoot = vscode.Uri.joinPath(root, 'src', 'webview');
-    web.options = {enableScripts: true, localResourceRoots: [webRoot, root]};
+    web.options = { enableScripts: true, localResourceRoots: [webRoot, root] };
     const asset = name => web.asWebviewUri(vscode.Uri.joinPath(webRoot, name)).toString();
     const nonce = randomBytes(20).toString('hex');
     views.add(web);
@@ -135,17 +165,25 @@ function activate(context) {
       .replace('SCRIPT_PROMPTS_URI', asset('prompts.js'))
       .replace('SCRIPT_NOTES_URI', asset('notes.js'))
       .replace('SCRIPT_OUTPUTS_URI', asset('outputs.js'))
+      .replace('SCRIPT_SKILLS_URI', asset('skills.js'))
       .replace('SCRIPT_SPLIT_URI', asset('splitPane.js'))
       .replace('SCRIPT_MAIN_URI', asset('main.js'))
       .replace('VIEW_MODE', sidebar ? 'sidebar' : 'panel');
   }
 
   context.subscriptions.push(
-    {dispose: () => { clearTimeout(watchTimer); if (outputWatcher) outputWatcher.close(); }},
+    {
+      dispose: () => {
+        clearTimeout(watchTimer);
+        clearTimeout(skillWatchTimer);
+        if (outputWatcher) outputWatcher.close();
+        if (skillWatcher) skillWatcher.close();
+      }
+    },
     vscode.window.registerWebviewViewProvider(
       'edenHub.library',
-      {resolveWebviewView: view => attach(view, true)},
-      {webviewOptions: {retainContextWhenHidden: true}}
+      { resolveWebviewView: view => attach(view, true) },
+      { webviewOptions: { retainContextWhenHidden: true } }
     ),
     vscode.commands.registerCommand('edenHub.open', () => { ensureDashboard(); }),
     vscode.window.onDidChangeTextEditorSelection(e => {
@@ -158,21 +196,23 @@ function activate(context) {
       const file = captureFile(editor);
       if (file && file !== lastFile) {
         lastFile = file;
-        broadcast({type: 'activeFile', file});
+        broadcast({ type: 'activeFile', file });
       }
     }),
-    vscode.workspace.onDidChangeWorkspaceFolders(refreshLibrary),
+    vscode.workspace.onDidChangeWorkspaceFolders(() => { refreshLibrary(); refreshSkills(); }),
     vscode.workspace.onDidChangeConfiguration(e => {
       if (e.affectsConfiguration('edenHub.storagePath')) {
         rootDir = resolveStorageDir(vscode);
         store = new Store(rootDir);
         noteStore = new NoteStore(rootDir);
         outputStore = new OutputStore(rootDir);
+        skillStore = new SkillStore(rootDir);
         store.migrateFromIfEmpty(legacyStorageDirs(context));
         startOutputWatcher();
+        startSkillWatcher();
         refreshAll();
       } else if (e.affectsConfiguration('edenHub.fontScale')) {
-        broadcast({type: 'fontScale', scale: getFontScale(vscode)});
+        broadcast({ type: 'fontScale', scale: getFontScale(vscode) });
       }
     }),
     vscode.window.onDidChangeWindowState(s => { if (s.focused) refreshAll(); })
@@ -194,7 +234,7 @@ function activate(context) {
     }, 300);
   }
 
-  return {store, noteStore, outputStore, verify};
+  return { store, noteStore, outputStore, skillStore, verify };
 }
 
-module.exports = {activate, formatSnippet};
+module.exports = { activate, formatSnippet };

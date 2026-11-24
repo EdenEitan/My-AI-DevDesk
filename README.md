@@ -2,7 +2,7 @@
 
 *(formerly Eden's Prompt Hub)*
 
-A zero-dependency **Antigravity IDE** & **VS Code** companion workspace for AI-assisted engineering and testing — combining a parameterized prompt library, pinned quick-launch favorites, RTL/LTR Quick Notes, rendered Markdown AI Outputs, live code snippet insertion, and verification checklists in one fluid interface built for both the IDE sidebar and secondary displays (such as an iPad).
+A zero-dependency **Antigravity IDE** & **VS Code** companion workspace for AI-assisted engineering and testing — combining a parameterized prompt library, pinned quick-launch favorites, a reusable **`SKILL.md` Skills Repository** with 1-click project/global sync, RTL/LTR Quick Notes, rendered Markdown AI Outputs, live code snippet insertion, and verification checklists in one fluid interface built for both the IDE sidebar and secondary displays (such as an iPad).
 
 ---
 
@@ -26,6 +26,10 @@ A zero-dependency **Antigravity IDE** & **VS Code** companion workspace for AI-a
 - **Hub Markdown Outputs (`Outputs`)**
   - Dedicated workspace (`~/.edens-prompt-hub/outputs/`) for AI-generated specs, test scenario matrices, and execution reports—keeping your project repository (`git status`) clean.
   - **`Output destination`** selector in `Customize` (`Hub Outputs (iPad)` / `Project docs` / `Chat only`), **`＋ Paste MD`** from clipboard, live `fs.watch` auto-refresh, zero-dependency pure-DOM Markdown renderer (scrollable tables + **interactive clickable `- [ ]` / `- [x]` checkboxes**), raw Markdown editor, **`Copy path`**, and **`Open in IDE ↗`**.
+- **Skills Repository (`Skills` · `SKILL.md`)**
+  - Dedicated library (`~/.edens-prompt-hub/skills/<slug>/SKILL.md`) for building, previewing, and maintaining reusable Antigravity `SKILL.md` runbooks with YAML frontmatter (`name` & `description`).
+  - Author skills via the structured **2-column Skill Builder** (`name`, trigger `description`, and Markdown instructions with starter template), paste directly from the clipboard (**`＋ Paste`**), or edit raw `SKILL.md`.
+  - **1-Click Sync / Export:** Sync any saved skill directly to the active project workspace (**`Sync to Project (.agents) ↗`** → `<workspace>/.agents/skills/<slug>/SKILL.md`) or to your machine-wide global Antigravity configuration (**`Sync to Global (~/.gemini) ↗`** → `~/.gemini/config/skills/<slug>/SKILL.md`).
 - **Shared Cross-IDE Storage & Verification Checklists**
   - Stores prompts, notes, checklists, and outputs in `~/.edens-prompt-hub` by default so **Antigravity IDE** and **VS Code** stay automatically synchronized, with non-destructive migration from legacy VS Code global storage.
 
@@ -82,6 +86,7 @@ my-ai-devdesk/
 │   │   ├── promptStore.js       # Prompt & checklist CRUD, pin toggle, legacy migration
 │   │   ├── noteStore.js         # Quick Notes persistence
 │   │   ├── outputStore.js       # Hub Markdown Outputs CRUD, path guards, checkbox toggle
+│   │   ├── skillStore.js        # SKILL.md YAML frontmatter parser/builder, CRUD & project/global export
 │   │   └── index.js
 │   ├── host/                    # VS Code extension host layer
 │   │   ├── config.js            # Storage path resolution, font scale, legacy directories
@@ -96,6 +101,7 @@ my-ai-devdesk/
 │       ├── prompts.js           # Library browse, reader, editor, customize, AI adaptation
 │       ├── notes.js             # Quick Notes workspace & debounced auto-save
 │       ├── outputs.js           # Hub Outputs viewer, raw editor & clipboard paste
+│       ├── skills.js            # SKILL.md repository builder, viewer & 1-click project/global sync
 │       ├── splitPane.js         # Docked side-by-side Split Panel (Notes & Outputs)
 │       └── main.js              # Topbar navigation & message dispatch bootstrap
 ├── test.js                      # Unit tests (storage, editorContext, messageRouter, webview helpers)

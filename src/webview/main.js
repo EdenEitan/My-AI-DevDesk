@@ -11,12 +11,17 @@
     el('promptsWorkspace').hidden = mod !== 'prompts';
     el('notesModule').hidden = mod !== 'notes';
     el('outputsModule').hidden = mod !== 'outputs';
+    el('skillsModule').hidden = mod !== 'skills';
     el('toggleSplit').hidden = mod !== 'prompts';
     el('tabPrompts').setAttribute('aria-selected', String(mod === 'prompts'));
     el('tabNotes').setAttribute('aria-selected', String(mod === 'notes'));
     el('tabOutputs').setAttribute('aria-selected', String(mod === 'outputs'));
+    el('tabSkills').setAttribute('aria-selected', String(mod === 'skills'));
     if (mod === 'outputs' || (mod === 'prompts' && state.splitOpen && state.splitTab === 'outputs')) {
       send('refreshOutputs');
+    }
+    if (mod === 'skills') {
+      send('refreshSkills');
     }
   }
 
@@ -24,6 +29,7 @@
   el('tabPrompts').onclick = () => switchModule('prompts');
   el('tabNotes').onclick = () => switchModule('notes');
   el('tabOutputs').onclick = () => switchModule('outputs');
+  el('tabSkills').onclick = () => switchModule('skills');
   el('scaleSm').onclick = () => { applyScale('sm'); send('setFontScale', {scale: 'sm'}); };
   el('scaleMd').onclick = () => { applyScale('md'); send('setFontScale', {scale: 'md'}); };
   el('scaleLg').onclick = () => { applyScale('lg'); send('setFontScale', {scale: 'lg'}); };
@@ -33,11 +39,14 @@
   app.bindPromptsEvents();
   app.bindNotesEvents();
   app.bindOutputsEvents();
+  app.bindSkillsEvents();
   app.bindSplitEvents();
 
   const messageHandlers = {
     library: m => {
       const folders = m.folders || [];
+      state.workspaceFolders = folders;
+      app.syncSkillProjectDropdown?.();
       const prev = el('project').value;
       el('project').replaceChildren(...(folders.length ? folders : ['']).map(f => new Option(f || 'Open a local project to use AI', f)));
       if (folders.includes(prev)) el('project').value = prev;
@@ -171,6 +180,40 @@
       showStatus('Output deleted.');
     },
     clipboardForOutput: m => app.openCreateOutputForm(m.content || ''),
+    skills: m => {
+      state.skills = m.items || [];
+      state.skillsPath = m.skillsPath || state.skillsPath;
+      if (Array.isArray(m.folders)) state.workspaceFolders = m.folders;
+      app.renderSkillsList();
+      if (state.activeSkillSlug && state.skills.some(s => s.slug === state.activeSkillSlug)) {
+        if (state.skillViewMode === 'rendered' && el('skillForm').hidden) {
+          send('readSkill', {slug: state.activeSkillSlug});
+        }
+      } else if (!state.activeSkillSlug && state.skills.length && el('skillForm').hidden) {
+        state.activeSkillSlug = state.skills[0].slug;
+        send('readSkill', {slug: state.activeSkillSlug});
+        app.renderSkillsList();
+      } else if (state.activeSkillSlug && !state.skills.some(s => s.slug === state.activeSkillSlug)) {
+        state.activeSkillSlug = null;
+        state.activeSkillDoc = null;
+        if (el('skillForm').hidden) app.showSkillPane('empty');
+      }
+    },
+    skillContent: handleSkillLoaded,
+    skillSaved: handleSkillLoaded,
+    skillDeleted: m => {
+      if (state.activeSkillSlug === m.slug) {
+        state.activeSkillSlug = null;
+        state.activeSkillDoc = null;
+        app.showSkillPane('empty');
+      }
+      showStatus('Skill deleted.');
+    },
+    skillExported: m => {
+      const targetLabel = m.target === 'global' ? 'Global Antigravity config' : 'Project .agents/skills';
+      showStatus('Synced "' + m.slug + '" to ' + targetLabel + ': ' + m.exportedPath);
+    },
+    clipboardForSkill: m => app.openSkillFormFromClipboard(m.content || ''),
     selectionInserted: m => {
       if (m.target === 'note' && state.activeNoteId) {
         insertTextAtCursor(el('noteBody'), m.snippet);
@@ -238,6 +281,25 @@
         send('toggleOutputCheckbox', {relPath: state.splitOutputPath, lineIndex, target: 'split'});
       });
     }
+  }
+
+  function handleSkillLoaded(m) {
+    state.editingSkillSlug = null;
+    state.activeSkillSlug = m.slug;
+    state.activeSkillDoc = m;
+    el('skillTitle').textContent = m.name || m.slug;
+    el('skillMeta').textContent = m.fullPath;
+    el('skillDescView').textContent = m.description || 'No description provided in frontmatter.';
+    const rawLines = (m.content || '').split(/\r?\n/);
+    const bodyLines = (m.body || '').split(/\r?\n/);
+    const bodyOffset = Math.max(0, rawLines.length - bodyLines.length);
+    app.renderMarkdown(el('skillRendered'), m.body || '', lineIndex => {
+      send('toggleSkillCheckbox', {slug: state.activeSkillSlug, lineIndex: bodyOffset + lineIndex});
+    });
+    app.setSkillViewMode('rendered');
+    app.showSkillPane('detail');
+    app.renderSkillsList();
+    if (m.type === 'skillSaved') showStatus('Skill saved: ' + m.slug + '/SKILL.md');
   }
 
   function handleAdaptResult(m) {
